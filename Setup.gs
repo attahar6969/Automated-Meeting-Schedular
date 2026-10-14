@@ -1,5 +1,4 @@
 /**
- * KISAN ENTERPRISES — OWNER'S MEETING SCHEDULER & MANAGEMENT SYSTEM
  * File: Setup.gs   (Part 1 of 6)
  *
  * Creates every sheet, header, format, dropdown, colour rule and the Dashboard
