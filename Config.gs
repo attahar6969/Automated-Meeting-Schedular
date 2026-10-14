@@ -1,4 +1,4 @@
-/*
+/**
  * File: Config.gs   (Part 1 of 6)
  *
  * Central configuration: sheet names, column maps, dropdown lists, colours,
