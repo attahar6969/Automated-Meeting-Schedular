@@ -1,5 +1,4 @@
 /**
- * KISAN ENTERPRISES — OWNER'S MEETING SCHEDULER & MANAGEMENT SYSTEM
  * File: Utils.gs   (Part 1 of 6)
  *
  * Shared helpers: settings access, locking, ID generation, phone
