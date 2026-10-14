@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--pri:#18202E;--acc:#D62828;--bg:#f2f4f8;--card:#fff;--line:#e3e7ee;--txt:#1b2437;--mut:#667085;
+    --green:#1E8449;--greenbg:#E3F4EA;--red:#C0392B;--redbg:#FBE5E2;--amber:#B9770E;--amberbg:#FDF1D6;--blue:#1F5FBF;--bluebg:#E1ECFB}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:13px}
+  .app{display:grid;grid-template-columns:232px 1fr;height:100vh}
+  .side{background:var(--pri);color:#cfd6e4;padding:16px 12px;display:flex;flex-direction:column;gap:3px;overflow:auto;border-right:4px solid var(--acc)}
+  .logobox{background:#fff;border-radius:12px;padding:8px;text-align:center;margin-bottom:10px}
+  .logobox img{max-width:100%;max-height:96px;display:block;margin:0 auto}
+  .bname{color:#fff;font-weight:700;font-size:14px;padding:2px 8px}
+  .btag{color:#9aa6bd;font-size:11px;padding:0 8px 14px}
+  .navlbl{font-size:11px;color:#8391ab;padding:10px 10px 4px}
+  .nav{padding:9px 12px;border-radius:8px;cursor:pointer;display:block;color:#cfd6e4;user-select:none;border-left:3px solid transparent}
+  .nav:hover{background:rgba(255,255,255,.08)}
+  .nav.on{background:rgba(255,255,255,.12);color:#fff;font-weight:600;border-left-color:var(--acc)}
+  .who{margin-top:auto;padding:12px 8px 2px;font-size:11px;color:#9aa6bd;word-break:break-all;border-top:1px solid rgba(255,255,255,.12)}
+  .main{padding:20px 26px;overflow:auto;position:relative}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .top h1{margin:0;font-size:22px;font-weight:700} .top p{margin:4px 0 0;color:var(--mut)}
+  .btn{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;font-size:13px;font-family:inherit}
+  .btn:hover{filter:brightness(1.15)} .btn:disabled{opacity:.6;cursor:wait}
+  .btn:focus-visible,.nav:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+  .btn.acc{background:var(--acc)} .btn.ghost{background:#fff;color:var(--txt);border:1px solid var(--line)}
+  .btn.sm{padding:4px 9px;font-size:11px;border-radius:6px}
+  .btn.ok{background:var(--green)} .btn.wa{background:#128C7E} .btn.amber{background:var(--amber)}
+.btn.danger{background:var(--red)}
+.btn.cream{background:#FFF1CC;color:#6b4e0a;border:1px solid #e6cf8f}
+.btn.wagreen{background:#25D366}
+.btn.dosync{background:#1F5FBF}
+.btn.resync{background:#475467}
+.wasub{display:none;margin-top:5px}
+.wasub.open{display:block}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(4,1fr);margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .kpi{cursor:pointer;border-top:3px solid var(--line)} .kpi:hover{border-top-color:var(--acc)}
+  .kpi .l{color:var(--mut);font-size:12px;font-weight:600}
+  .kpi .v{font-size:30px;font-weight:700;margin-top:6px} .kpi .s{font-size:11px;margin-top:2px}
+  .c2{grid-template-columns:1.6fr 1fr;margin-bottom:14px} .c3{grid-template-columns:1.5fr 1fr 1fr;margin-bottom:14px}
+  h3{margin:0 0 10px;font-size:14px}
+  table{width:100%;border-collapse:collapse}
+  td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;vertical-align:middle}
+  th{color:var(--mut);font-weight:600;font-size:11px;position:sticky;top:0;background:#fff}
+  tr.click{cursor:pointer} tr.click:hover td{background:#f7f9fd}
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+  .p-b{background:var(--bluebg);color:var(--blue)} .p-g{background:var(--greenbg);color:var(--green)}
+  .p-r{background:var(--redbg);color:var(--red)} .p-a{background:var(--amberbg);color:var(--amber)} .p-n{background:#eceff5;color:#555}
+  .bars{display:flex;align-items:flex-end;gap:12px;height:170px;padding-top:8px}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .bar i{width:70%;background:var(--pri);border-radius:5px 5px 0 0;min-height:3px;display:block}
+  .bar b{font-size:11px;margin-bottom:3px} .bar span{font-size:10px;color:var(--mut);margin-top:5px}
+  .donutwrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .donut{width:130px;height:130px;border-radius:50%;position:relative;flex:none}
+  .donut:after{content:"";position:absolute;inset:26px;background:#fff;border-radius:50%}
+  .donut em{position:absolute;inset:0;display:grid;place-items:center;z-index:2;font-style:normal;font-weight:700;font-size:22px}
+  .leg div{display:flex;align-items:center;gap:7px;margin:5px 0;font-size:12px}
+  .leg i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .qa{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .qa button{border:1px solid var(--line);background:#f8f9fc;border-radius:8px;padding:14px 8px;cursor:pointer;font-weight:600;color:var(--pri);font-family:inherit}
+  .qa button:hover{border-color:var(--acc)}
+  .row{padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer} .row:last-child{border:0}
+  .row small{color:var(--mut);display:block;margin-top:2px}
+  .empty{color:var(--mut);padding:18px 0;text-align:center}
+  .tools{display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+  .tools input,.tools select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+  .tools input{flex:1;max-width:340px}
+  .tablewrap{max-height:calc(100vh - 190px);overflow:auto}
+  .ov{position:fixed;inset:0;background:rgba(24,32,46,.5);display:flex;align-items:center;justify-content:center;z-index:50}
+  .modal{background:#fff;border-radius:12px;width:min(860px,94vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px}
+  .modal .body{padding:16px 20px;overflow:auto}
+  .modal footer{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;align-items:center}
+  .x{cursor:pointer;font-size:22px;color:var(--mut);border:0;background:none}
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+  .fld{display:flex;flex-direction:column;gap:4px} .fld.full{grid-column:1/-1}
+  .fld label{font-size:12px;font-weight:600;color:var(--mut)} .rq{color:var(--red)}
+  .fld input,.fld select,.fld textarea{padding:8px 10px;border:1px solid #cfd6e3;border-radius:7px;font:inherit;background:#fff}
+  .fld input[type=color]{padding:2px;height:36px;width:100%}
+  .fld textarea{min-height:64px;resize:vertical} .fld small{color:var(--mut);font-size:11px}
+  .errbox{color:var(--red);font-weight:600;margin-right:auto;font-size:12px}
+  #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--pri);color:#fff;padding:10px 18px;border-radius:8px;z-index:99;display:none;max-width:70vw}
+  #toast.bad{background:var(--red)}
+  .msg{padding:40px;text-align:center;color:var(--mut)}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+  .tab{padding:9px 14px;cursor:pointer;color:var(--mut);font-weight:600;border-bottom:3px solid transparent;margin-bottom:-1px}
+  .tab.on{color:var(--pri);border-bottom-color:var(--acc)}
+  .panel{display:none} .panel.on{display:block}
+  .logoedit{display:flex;gap:16px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .logoedit img{width:96px;height:96px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff;padding:4px}
+  .lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .chip{background:#eef1f6;border-radius:99px;padding:3px 10px;font-size:12px}
+  .chip b{cursor:pointer;color:var(--red);margin-left:4px} .chip i{font-style:normal;font-size:10px}
+  .ladd{display:flex;gap:6px} .ladd input{flex:1;padding:6px 9px;border:1px solid #cfd6e3;border-radius:7px;font:inherit}
+  .hl{padding:8px 0;border-bottom:1px solid var(--line)} .hl small{color:var(--amber);margin-left:6px}
+  .savebar{position:sticky;bottom:0;background:var(--bg);padding:12px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  
+th.fh{cursor:pointer;user-select:none;white-space:nowrap}
+th.fh:hover{color:var(--txt)}
+th.fh .fi{margin-left:4px;font-size:10px;opacity:.55}
+th.fh.fa{color:var(--acc)} th.fh.fa .fi{opacity:1}
+.fmenu{position:fixed;z-index:60;width:270px;max-width:calc(100vw - 16px);max-height:min(72vh,480px);overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.22);padding:12px;font-size:12px;color:var(--txt)}
+.fmenu h4{margin:0 0 8px;font-size:12px;color:var(--mut)}
+.fmenu input[type=text],.fmenu input[type=date],.fmenu input[type=time]{width:100%;padding:7px 9px;border:1px solid #cfd6e3;border-radius:7px;font:inherit;margin-bottom:8px}
+.fmenu label.fl{display:block;font-weight:600;color:var(--mut);margin-bottom:3px}
+.fml{max-height:200px;overflow:auto;border:1px solid var(--line);border-radius:7px;padding:4px 8px;margin-bottom:8px}
+.fo{display:flex;gap:7px;align-items:center;padding:4px 0;cursor:pointer}
+.fmrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.fmf{display:flex;gap:6px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+.fmerr{color:var(--red);font-weight:600;margin-bottom:6px}
+.fmnote{color:var(--mut);margin:4px 0 8px}
+
+  @media(max-width:900px){
+    .app{grid-template-columns:1fr;height:auto}
+    .side{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:4px solid var(--acc);align-items:center}
+    .logobox{margin:0;width:70px} .bname,.btag,.navlbl,.who{display:none} .nav{padding:7px 10px}
+    .kpis,.c2,.c3,.form{grid-template-columns:1fr 1fr} .c2,.c3{grid-template-columns:1fr}
+    .main{padding:14px;overflow:visible} .tablewrap{max-height:none}
+  }
+  @media(max-width:560px){.kpis,.form{grid-template-columns:1fr}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  .burger{display:none}
+@media(max-width:900px){
+  .side{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 12px;position:sticky;top:0;z-index:40}
+  .logobox{width:48px;height:48px;padding:3px;margin:0;border-radius:8px;flex:none}
+  .logobox img{max-height:42px}
+  .bname{display:block;flex:1;padding:0;font-size:15px}
+  .btag{display:none}
+  .burger{display:block;order:2;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;font-size:22px;line-height:1;padding:8px 14px;cursor:pointer}
+  #navhost{display:none;width:100%;order:3}
+  .side.open #navhost{display:block}
+  .navlbl{display:block}
+  .nav{padding:12px}
+  .who{display:none;width:100%;order:4;margin-top:6px}
+  .side.open .who{display:block}
+  .tablewrap table{min-width:980px}
+  .tablewrap{-webkit-overflow-scrolling:touch}
+  .card{overflow-x:auto}
+  .tools input{max-width:none;width:100%}
+  .tools select{width:100%}
+  .top h1{font-size:18px}
+  .bars{gap:6px}
+  .tabs{flex-wrap:nowrap;overflow-x:auto}
+  .tab{white-space:nowrap}
+  .lgrid{grid-template-columns:1fr}
+  .ov{align-items:flex-end}
+  .modal{width:100%!important;max-width:100vw;max-height:94vh;border-radius:14px 14px 0 0}
+  .btn.sm{padding:7px 11px;font-size:12px}
+  .fld input,.fld select,.fld textarea,.tools input,.tools select,.fmenu input{font-size:16px}
+}
+@media(max-width:560px){
+  .kpis{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi .v{font-size:24px}
+  .form{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="side">
+    <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false">☰</button>
+    <div class="logobox"><img id="logo" alt="Company logo"></div>
+    <div class="bname" id="bname"></div><div class="btag" id="btag"></div>
+    <div id="navhost"></div>
+    <div class="who" id="who"></div>
+  </div>
+  <div class="main" id="main"><div class="msg">Loading…</div></div>
+</div>
+<div id="toast"></div>
+<div id="modalHost"></div>
+
+<script>
+/* ============================== helpers ================================= */
+var S={boot:null,data:{meeting:[],minutes:[],action:[],followup:[],customer:[]},view:'overview',q:'',flt:'',L:[]};
+var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function call(fn){var a=[].slice.call(arguments,1);return new Promise(function(ok,no){var r=google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){no(e);});r[fn].apply(r,a);});}
+function toast(m,bad){var t=$('toast');t.textContent=m;t.className=bad?'bad':'';t.style.display='block';clearTimeout(t._h);t._h=setTimeout(function(){t.style.display='none';},bad?6000:3200);}
+function fmtD(iso){if(!iso)return '';var p=iso.split('-');return p[2]+'-'+MON[+p[1]-1]+'-'+p[0];}
+function fmtT(hm){if(!hm)return '';var p=hm.split(':'),h=+p[0],ap=h>=12?'PM':'AM',h12=h%12||12;return (h12<10?'0':'')+h12+':'+p[1]+' '+ap;}
+function todayISO(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata'}).format(new Date());}
+function addMin(hm,m){var p=hm.split(':'),t=Math.min(+p[0]*60+ +p[1]+m,1439);return ('0'+Math.floor(t/60)).slice(-2)+':'+('0'+t%60).slice(-2);}
+function pill(t,c){return '<span class="pill '+c+'">'+esc(t)+'</span>';}
+function stCls(s){return {'Completed':'p-g','Finalized':'p-g','Confirmed':'p-g','Received':'p-b','Cancelled':'p-r','Deleted Externally':'p-r','Overdue':'p-r','Pending':'p-a','Request Sent':'p-a','Draft':'p-a','In Progress':'p-b','On Hold':'p-n'}[s]||'p-b';}
+function priCls(p){return p==='High'?'p-r':p==='Low'?'p-g':'p-a';}
+var COLORS={'Scheduled':'#1F5FBF','Completed':'#1E8449','Cancelled':'#C0392B','Rescheduled':'#B9770E','Deleted Externally':'#8b95a7'};
+
+function applyBrand(b){
+  var r=document.documentElement.style;r.setProperty('--pri',b.c1);r.setProperty('--acc',b.c2);
+  $('logo').src=b.logo;$('bname').textContent=b.company;$('btag').textContent=b.tagline;document.title=b.company+' — Meeting Management';
+}
+var NAV=[['overview','Overview'],['meeting','Meeting Register'],['minutes','Meeting Minutes'],['action','Action Items'],['followup','Follow-Up Tracker'],['customer','Customers'],
+  ['-','SYSTEM'],['sync','Calendar Sync'],['reports','Reports'],['settings','Settings']];
+function buildNav(){
+  $('navhost').innerHTML=NAV.map(function(n){return n[0]==='-'?'<div class="navlbl">'+n[1]+'</div>':'<a class="nav" tabindex="0" data-v="'+n[0]+'">'+n[1]+'</a>';}).join('');
+  $('who').textContent=(S.boot.user||'')+(S.boot.role?' · '+S.boot.role.toLowerCase():'');
+}
+$('navhost').addEventListener('click',function(e){var v=e.target.getAttribute&&e.target.getAttribute('data-v');if(v)go(v);});
+$('navhost').addEventListener('keydown',function(e){if(e.key==='Enter'){var v=e.target.getAttribute&&e.target.getAttribute('data-v');if(v)go(v);}});
+
+function doneText(r){
+  if(r.status!=='Completed'||!r.date)return '';
+  var a=r.date.split('-'),b=todayISO().split('-');
+  var n=Math.round((Date.UTC(+b[0],+b[1]-1,+b[2])-Date.UTC(+a[0],+a[1]-1,+a[2]))/86400000);
+  if(n<0)return 'Marked done early';
+  if(n===0)return 'Today';
+  if(n===1)return 'Yesterday';
+  return n+' days ago';
+}
+/* ============ follow-up helpers ============ */
+function isOpenFu(x){return x.status==='Pending'||x.status==='Rescheduled';}
+function byDateAsc(a,b){return a.date<b.date?-1:a.date>b.date?1:0;}
+function fuOpenFor(mid){
+  return S.data.followup.filter(function(x){return x.meetingId===mid&&isOpenFu(x);}).sort(byDateAsc)[0]||null;
+}
+function fuColumn(mid){
+  var all=S.data.followup.filter(function(x){return x.meetingId===mid&&x.status!=='Cancelled';});
+  if(!all.length)return null;
+  var open=all.filter(isOpenFu).sort(byDateAsc);
+  if(open.length)return open[0];
+  return all.sort(function(a,b){return -byDateAsc(a,b);})[0];
+}
+function fuCell(r){
+  var f=fuColumn(r.id);
+  if(!f)return '<span style="color:var(--mut)">None</span>';
+  var open=isOpenFu(f),late=open&&f.date&&f.date<todayISO();
+  var cls=!open?'p-g':late?'p-r':'p-a';
+  var label=!open?('Completed '+fmtD(f.completedDate||f.date)):(fmtD(f.date)+' · '+(late?'Overdue':f.status));
+  var h='<span onclick="event.stopPropagation()">'+pill(label,cls)+'<br><small style="color:var(--mut)">'+esc((f.subject||'').slice(0,50))+'</small>';
+  if(open)h+='<br><button class="btn sm ok" style="margin-top:4px" onclick="doneFollow(\''+f.id+'\',this)">Mark done</button>';
+  return h+'</span>';
+}
+function doneFollow(id,btn){
+  btn.disabled=true;btn.textContent='Saving…';
+  call('dashSave','followup',{id:id,status:'Completed'}).then(function(r){
+    var i=S.data.followup.findIndex(function(x){return x.id===id;});
+    if(i>=0)S.data.followup[i]=r.record;
+    toast('Follow-up marked done');
+    if(S.view==='meeting')renderList('meeting');
+  }).catch(function(e){btn.disabled=false;btn.textContent='Mark done';toast(e.message||e,1);});
+}
+function fuSection(rec){
+  var f=rec?fuOpenFor(rec.id):null,L=S.boot.lists;
+  function opts(list,sel){return (list||[]).map(function(x){return '<option'+(x===sel?' selected':'')+'>'+esc(x)+'</option>';}).join('');}
+  return '<div class="fld full" style="border-top:1px solid var(--line);padding-top:10px"><label style="font-size:13px;color:var(--pri)">Follow-up (optional)'+(f?' · '+esc(f.id):'')+'</label>'+
+    (f?'<small>Saving updates this follow-up. To add a new one, first set this one to Completed.</small>':'')+'</div>'+
+    '<input type="hidden" id="f_fuId" value="'+(f?esc(f.id):'')+'">'+
+    '<div class="fld"><label>Follow-up date</label><input id="f_fuDate" type="date" value="'+(f?esc(f.date):'')+'"></div>'+
+    '<div class="fld"><label>Follow-up type</label><select id="f_fuType">'+opts(L.followType,f?f.type:'Next Meeting')+'</select></div>'+
+    '<div class="fld"><label>Follow-up status</label><select id="f_fuStatus">'+opts(L.followStatus,f?f.status:'Pending')+'</select></div>'+
+    '<div class="fld full"><label>Follow-up note</label><input id="f_fuSubject" type="text" value="'+(f?esc(f.subject):'')+'" placeholder="e.g. Client will meet on Thursday 3 PM"></div>';
+}
+
+/* ============================== schemas ================================= */
+var FORMS={
+ meeting:[
+  {k:'title',l:'Agenda',t:'textarea',full:1},
+  {k:'custName',l:'Customer name',t:'text',dl:1,req:1},{k:'company',l:'Company name',t:'text'},
+  {k:'custMobile',l:'Customer mobile',t:'tel',req:1},{k:'custWa',l:'Customer WhatsApp',t:'tel'},
+  {k:'date',l:'Meeting date',t:'date'},{k:'start',l:'Start time',t:'time'},
+  {k:'end',l:'End time',t:'time'},{k:'type',l:'Meeting type',t:'select',list:'meetingType'},
+  {k:'priority',l:'Priority',t:'select',list:'priority'},{k:'mode',l:'Meeting mode',t:'select',list:'meetingMode'},
+  {k:'locType',l:'Location type',t:'select',list:'locationType'},{k:'locStatus',l:'Location status',t:'select',list:'locationStatus'},
+  {k:'address',l:'Full meeting address',t:'textarea',full:1},
+  {k:'mapLink',l:'Google Maps link',t:'url'},{k:'meetLink',l:'Google Meet link',t:'url'},
+  {k:'participants',l:'Participants',t:'text',full:1},
+  {k:'status',l:'Meeting status',t:'select',list:'meetingStatus',blank:0},
+  {k:'ownerMobile',l:'Owner mobile',t:'tel'},{k:'remarks',l:'Remarks',t:'textarea',full:1}],
+ minutes:[
+  {k:'meetingId',l:'Meeting',t:'meet',req:1,full:1},
+  {k:'summary',l:'Discussion summary',t:'textarea',req:1,full:1},{k:'topics',l:'Topics discussed',t:'textarea',full:1},
+  {k:'decisions',l:'Decisions taken',t:'textarea',full:1},{k:'instructions',l:'Owner instructions',t:'textarea',full:1},
+  {k:'remarks',l:'Additional remarks',t:'textarea',full:1},
+  {k:'status',l:'Minutes status',t:'select',list:'minutesStatus',blank:0},{k:'recordedBy',l:'Recorded by',t:'text'}],
+ action:[
+  {k:'task',l:'Task description',t:'textarea',req:1,full:1},{k:'meetingId',l:'Related meeting (optional)',t:'meet',full:1},
+  {k:'assignedTo',l:'Assigned to',t:'text'},{k:'assignedBy',l:'Assigned by',t:'text'},
+  {k:'priority',l:'Priority',t:'select',list:'priority',blank:0},{k:'deadline',l:'Deadline',t:'date'},
+  {k:'status',l:'Status',t:'select',list:'actionStatus',blank:0},{k:'remarks',l:'Remarks',t:'textarea',full:1}],
+ followup:[
+  {k:'subject',l:'Follow-up subject',t:'text',req:1,full:1},{k:'meetingId',l:'Related meeting (optional)',t:'meet',full:1},
+  {k:'custName',l:'Customer name',t:'text',dl:1},{k:'person',l:'Responsible person',t:'text'},
+  {k:'date',l:'Follow-up date',t:'date',req:1},{k:'type',l:'Follow-up type',t:'select',list:'followType',blank:0},
+  {k:'status',l:'Status',t:'select',list:'followStatus',blank:0},{k:'remarks',l:'Remarks',t:'textarea',full:1}],
+ customer:[
+  {k:'name',l:'Customer name',t:'text',req:1},{k:'company',l:'Company name',t:'text'},
+  {k:'mobile',l:'Mobile number',t:'tel'},{k:'wa',l:'WhatsApp (blank = same as mobile)',t:'tel'},
+  {k:'email',l:'E-mail',t:'email'},{k:'mapLink',l:'Google Maps link',t:'url'},
+  {k:'address',l:'Address',t:'textarea',full:1},{k:'notes',l:'Notes',t:'textarea',full:1}]
+};
+var DEFAULTS={
+ meeting:function(){var c=S.boot.cfg;return {type:c.defType,priority:c.defPri,mode:c.defMode,locType:c.defLoc,status:'Scheduled',date:todayISO(),start:c.defStart,end:addMin(c.defStart,c.dur)};},
+ minutes:function(){return {status:'Draft'};},
+ action:function(){return {status:'Pending',priority:S.boot.cfg.defPri};},
+ followup:function(){return {status:'Pending',type:'Customer Call',date:todayISO()};},
+ customer:function(){return {};}};
+var TITLES={meeting:'meeting',minutes:'meeting minutes',action:'action item',followup:'follow-up',customer:'customer'};
+var NAVTITLE={meeting:'Meeting Register',minutes:'Meeting Minutes',action:'Action Items',followup:'Follow-Up Tracker',customer:'Customers'};
+var STATUSKEY={meeting:'status',minutes:'status',action:'status',followup:'status',customer:null};
+var STATUSLIST={meeting:'meetingStatus',minutes:'minutesStatus',action:'actionStatus',followup:'followStatus'};
+var COLS={
+  meeting:[['id','ID'],['date','Date',function(r){return fmtD(r.date);}],['start','Time',function(r){return fmtT(r.start);}],['title','Agenda',function(r){return esc((r.title||'').slice(0,80));}],
+   ['custName','Customer',function(r){return esc(r.custName||r.company);}],
+   ['priority','Priority',function(r){return pill(r.priority,priCls(r.priority));}],
+   ['status','Status',function(r){return pill(r.status,stCls(r.status));}],
+   ['done','Completed',function(r){return esc(doneText(r));}],
+   ['fu','Follow-Up',function(r){return fuCell(r);}],
+   ['locStatus','Location',function(r){return r.locStatus?pill(r.locStatus,stCls(r.locStatus)):'';}],
+   ['syncStatus','Sync',function(r){return syncCell(r);}]],
+ minutes:[['id','ID'],['date','Date',function(r){return fmtD(r.date);}],['title','Meeting'],['summary','Summary',function(r){return esc((r.summary||'').slice(0,90));}],
+   ['status','Status',function(r){return pill(r.status,stCls(r.status));}],['recordedBy','By']],
+ action:[['id','ID'],['task','Task'],['assignedTo','Assigned to'],['priority','Priority',function(r){return pill(r.priority,priCls(r.priority));}],
+   ['deadline','Deadline',function(r){var late=r.deadline&&r.deadline<todayISO()&&r.status!=='Completed';return late?pill(fmtD(r.deadline),'p-r'):fmtD(r.deadline);}],
+   ['status','Status',function(r){return pill(r.status,stCls(r.status));}],['title','Meeting']],
+ followup:[['id','ID'],['subject','Subject'],['meetingId','Meeting',function(r){var m=S.data.meeting.filter(function(x){return x.id===r.meetingId;})[0];return m?esc(fmtD(m.date)+' · '+(m.title||'').slice(0,40)):'—';}],['custName','Customer'],['date','Date',function(r){var late=r.date<todayISO()&&r.status==='Pending';return late?pill(fmtD(r.date),'p-r'):fmtD(r.date);}],
+   ['person','Responsible'],['type','Type'],['status','Status',function(r){return pill(r.status,stCls(r.status));}]],
+ customer:[['id','ID'],['name','Name'],['company','Company'],['mobile','Mobile'],['wa','WhatsApp'],['email','E-mail'],['address','Address',function(r){return esc((r.address||'').slice(0,60));}]]
+};
+
+/* ============================== boot / nav ============================== */
+function refreshEntity(n){return call('dashList',n).then(function(rows){S.data[n]=rows;});}
+function showFatal(e){
+  var m=(e&&e.message)||String(e);
+  call('appWho').then(function(u){$('main').innerHTML='<div class="msg" style="color:#C0392B"><b>'+esc(m)+'</b>'+(u?'<br><br>Signed in as '+esc(u):'')+'</div>';}).catch(function(){$('main').innerHTML='<div class="msg" style="color:#C0392B">'+esc(m)+'</div>';});
+}
+function boot(){
+  call('appBranding').then(applyBrand).catch(function(){});
+  return call('appBootstrap').then(function(b){
+    S.boot=b;applyBrand(b.brand);
+    if(b.needsSetup)return renderSetup();
+    return Promise.all(['meeting','minutes','action','followup','customer'].map(refreshEntity)).then(function(){buildNav();go(S.view);});
+  }).catch(showFatal);
+}
+function renderSetup(){
+  $('main').innerHTML='<div class="card" style="max-width:560px;margin:40px auto"><h3>First-time setup</h3><p>The sheets that store your data do not exist yet. This creates the meeting register, minutes, action items, follow-ups, customers, logs and settings. Nothing is deleted.</p><button class="btn acc" id="sbtn" onclick="runSetup()">Create system</button> <span class="errbox" id="serr"></span></div>';
+}
+function runSetup(){var b=$('sbtn');b.disabled=true;b.textContent='Creating… (up to a minute)';
+  call('appRunSetup').then(function(){S.view='settings';return boot();}).then(function(){toast('System created. Fill in your details below.');}).catch(function(e){b.disabled=false;b.textContent='Create system';$('serr').textContent=e.message||String(e);});}
+function go(v,flt){
+  closeMenu();
+  S.view=v;S.q='';S.flt=flt||'';
+  [].forEach.call(document.querySelectorAll('.nav'),function(n){n.className='nav'+(n.getAttribute('data-v')===v?' on':'');});
+  if(v==='overview')return renderOverview();
+  if(v==='sync')return renderSync();
+  if(v==='settings')return renderSettings();
+  if(v==='reports')return renderReports();
+  renderList(v);
+}
+setInterval(function(){
+  if(document.hidden||!S.boot||S.boot.needsSetup||$('modalHost').innerHTML||S.menu)return;
+  if(S.view==='overview')renderOverview(true);
+  else if(S.data[S.view]&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))Promise.all([refreshEntity(S.view)].concat(S.view==='meeting'?[refreshEntity('followup')]:[])).then(function(){if(!$('modalHost').innerHTML)renderList(S.view);});
+},60000);
+
+/* ============================== overview ================================ */
+function renderOverview(silent){
+  var m=$('main');if(!silent)m.innerHTML='<div class="msg">Loading…</div>';
+  call('getDashboardData').then(function(d){
+    if(S.view!=='overview')return;
+    var k=d.kpi,h='';
+    h+='<div class="top"><div><h1>'+esc(d.greeting)+(d.owner?', '+esc(d.owner):'')+'</h1><p>Here is what is happening with your meetings today. '+esc(d.todayText)+'</p></div>'+
+       '<div><button class="btn ghost" onclick="go(\'overview\')">Refresh</button> <button class="btn acc" onclick="openForm(\'meeting\')">New meeting</button></div></div>';
+    function kpi(l,v,s,c,onc){return '<div class="card kpi" onclick="'+onc+'"><div class="l">'+l+'</div><div class="v" style="color:'+c+'">'+v+'</div><div class="s" style="color:'+c+'">'+s+'</div></div>';}
+    h+='<div class="grid kpis">'+
+      kpi("Today's meetings",k.today,'scheduled today','#1F5FBF',"go('meeting','__today')")+
+      kpi('Upcoming',k.upcoming,'after today','#1F5FBF',"go('meeting','__upcoming')")+
+      kpi('Pending actions',k.pendingActions,'on track','#B9770E',"go('action','__open')")+
+      kpi('Overdue actions',k.overdueActions,'need attention','#C0392B',"go('action','Overdue')")+
+      kpi('Follow-ups due',k.followDue,'today or earlier','#B9770E',"go('followup','Pending')")+
+      kpi('Locations pending',k.locPending,'awaiting customer','#B9770E',"go('meeting','__loc')")+
+      kpi('Minutes pending',k.minutesPending,'not finalized','#B9770E',"go('minutes')")+
+      kpi('Total meetings',k.total,'all time','#1E8449',"go('meeting')")+'</div>';
+    var max=Math.max.apply(null,d.weeks.map(function(w){return w.count;}).concat([1]));
+    var bars=d.weeks.map(function(w){return '<div class="bar"><b>'+w.count+'</b><i style="height:'+Math.round(w.count/max*130)+'px"></i><span>'+esc(w.label)+'</span></div>';}).join('');
+    var total=d.statuses.reduce(function(a,b){return a+b.count;},0),acc=0,stops=[],leg='';
+    d.statuses.forEach(function(s){var c=COLORS[s.name]||'#8b95a7',a=acc/total*100,b=(acc+s.count)/total*100;stops.push(c+' '+a+'% '+b+'%');acc+=s.count;leg+='<div><i style="background:'+c+'"></i>'+esc(s.name)+' <b>'+s.count+'</b></div>';});
+    var donut=total?'<div class="donut" style="background:conic-gradient('+stops.join(',')+')"><em>'+total+'</em></div>':'<div class="empty">No meetings yet</div>';
+    h+='<div class="grid c2"><div class="card"><h3>Meeting activity, last 8 weeks</h3><div class="bars">'+bars+'</div></div>'+
+       '<div class="card"><h3>Meeting status</h3><div class="donutwrap">'+donut+'<div class="leg">'+leg+'</div></div></div></div>';
+    var sch=d.schedule.length?'<table><tr><th>Time</th><th>Meeting</th><th>Customer</th><th>Status</th></tr>'+d.schedule.map(function(x){return '<tr class="click" onclick="editRec(\'meeting\',\''+x.id+'\')"><td><b>'+esc(x.time)+'</b></td><td>'+esc(x.title)+'</td><td>'+esc(x.customer)+'</td><td>'+pill(x.status||'Scheduled',stCls(x.status))+'</td></tr>';}).join('')+'</table>':'<div class="empty">No meetings today. Use “New meeting” to schedule one.</div>';
+    var qa='<div class="qa"><button onclick="openForm(\'meeting\')">New meeting</button><button onclick="openForm(\'minutes\')">Add minutes</button>'+
+      '<button onclick="openForm(\'action\')">Add action item</button><button onclick="openForm(\'followup\')">Add follow-up</button>'+
+      '<button onclick="openForm(\'customer\')">Add customer</button><button onclick="go(\'meeting\',\'__loc\')">Request location</button></div>';
+    h+='<div class="grid c3"><div class="card"><h3>Today\'s schedule</h3>'+sch+'</div><div class="card"><h3>Quick actions</h3>'+qa+'</div>'+
+       '<div class="card"><h3>Customer coordination</h3>'+(d.locations.length?d.locations.map(function(l){return '<div class="row" onclick="editRec(\'meeting\',\''+l.id+'\')"><b>'+esc(l.customer)+'</b> '+pill(l.status,'p-a')+'<small>'+esc(l.title)+' · '+esc(l.date)+'</small></div>';}).join(''):'<div class="empty">All locations confirmed.</div>')+'</div></div>';
+    h+='<div class="card"><h3>Pending action items</h3>'+(d.actions.length?'<table><tr><th>Task</th><th>Assigned to</th><th>Priority</th><th>Deadline</th><th></th></tr>'+
+      d.actions.map(function(a){return '<tr><td class="click" onclick="editRec(\'action\',\''+a.id+'\')">'+esc(a.task)+'</td><td>'+esc(a.who)+'</td><td>'+pill(a.priority||'—',priCls(a.priority))+'</td><td>'+(a.late?pill(a.deadline+' · overdue','p-r'):esc(a.deadline||'—'))+'</td><td><button class="btn sm ok" onclick="markDone(\'action\',\''+a.id+'\')">Done</button></td></tr>';}).join('')+'</table>':'<div class="empty">No open action items.</div>')+'</div>';
+    m.innerHTML=h;
+  }).catch(function(e){if(!silent)m.innerHTML='<div class="msg" style="color:#C0392B">'+esc(e.message||e)+'</div>';});
+}
+
+/* ============================== list views ============================== */
+function renderList(n){
+  var cols=COLS[n],rows=S.data[n].slice().reverse(),q=S.q.toLowerCase(),f=S.flt,t=todayISO();
+  rows=rows.filter(function(r){
+    if(q&&Object.keys(r).map(function(k){return r[k];}).join(' ').toLowerCase().indexOf(q)<0)return false;
+    if(!f)return true;
+    if(f==='__loc')return (r.locStatus==='Pending'||r.locStatus==='Request Sent')&&r.status!=='Cancelled'&&r.status!=='Deleted Externally';
+    if(f==='__today')return r.date===t&&r.status!=='Cancelled';
+    if(f==='__upcoming')return r.date>t&&(r.status==='Scheduled'||r.status==='Rescheduled');
+    if(f==='__open')return r.status!=='Completed';
+    var sk=STATUSKEY[n];return sk?r[sk]===f:true;
+  });
+  if(n==='meeting')rows=applyColFilters(rows);
+  if(n==='meeting'&&S.sort){
+    var sk2=S.sort.key,sd=S.sort.dir;
+    rows.sort(function(a,b){
+      var x=a[sk2]||'',y=b[sk2]||'';
+      if(sk2==='start'){if(!x&&!y)return 0;if(!x)return 1;if(!y)return -1;}
+      return (sk2==='id'?x.localeCompare(y,undefined,{numeric:true}):(x<y?-1:x>y?1:0))*sd;
+    });
+  }
+  var opts='<option value="">All</option>';
+  if(n==='meeting')opts+='<option value="__today">Today</option><option value="__upcoming">Upcoming</option><option value="__loc">Location pending</option>';
+  if(n==='action')opts+='<option value="__open">Open (not completed)</option>';
+  if(STATUSLIST[n])S.boot.lists[STATUSLIST[n]].forEach(function(s){opts+='<option>'+esc(s)+'</option>';});
+  var nf=n==='meeting'?activeCount():0;
+  var h='<div class="top"><div><h1>'+NAVTITLE[n]+'</h1><p>'+rows.length+' record(s). Click a row to view or edit.'+(n==='meeting'?' Click a column heading to filter or sort.':'')+'</p></div><button class="btn acc" onclick="openForm(\''+n+'\')">Add '+TITLES[n]+'</button></div>';
+  h+='<div class="tools"><input id="q" placeholder="Search…" value="'+esc(S.q)+'" oninput="S.q=this.value;renderListKeepFocus(\''+n+'\')">'+(STATUSKEY[n]?'<select id="flt" onchange="S.flt=this.value;renderList(\''+n+'\')">'+opts+'</select>':'')+
+    (n==='meeting'&&(nf||S.sort)?'<button class="btn sm ghost" onclick="clearColFilters()">Clear column filters'+(nf?' ('+nf+')':'')+'</button>':'')+'</div>';
+  h+='<div class="card tablewrap" style="padding:0"><table><tr>'+cols.map(function(c){return n==='meeting'?fhHead(c):'<th>'+c[1]+'</th>';}).join('')+'<th>Actions</th></tr>';
+  if(!rows.length)h+='<tr><td colspan="'+(cols.length+1)+'" class="empty">Nothing to show.</td></tr>';
+  rows.forEach(function(r){
+    h+='<tr class="click" onclick="editRec(\''+n+'\',\''+r.id+'\')">'+cols.map(function(c){return '<td>'+(c[2]?c[2](r):esc(r[c[0]]))+'</td>';}).join('')+'<td onclick="event.stopPropagation()">'+rowButtons(n,r)+'</td></tr>';
+  });
+  h+='</table></div>';
+  $('main').innerHTML=h;
+  var fl=$('flt');if(fl)fl.value=S.flt;
+}
+function renderListKeepFocus(n){renderList(n);var q=$('q');q.focus();q.setSelectionRange(q.value.length,q.value.length);}
+function rowButtons(n,r){
+  var b='';
+  if(n==='meeting'){
+    if(r.status==='Scheduled'||r.status==='Rescheduled')b+='<button class="btn sm ok" onclick="markDone(\'meeting\',\''+r.id+'\')">Complete</button> ';
+    var sub='<button class="btn sm wa" onclick="wa(\''+r.id+'\',\'customer\')">Confirm To Client</button> ';
+    if(r.mode!=='Virtual')sub+='<button class="btn sm amber" onclick="wa(\''+r.id+'\',\'location\')">Ask Location</button> ';
+    sub+='<button class="btn sm cream" onclick="wa(\''+r.id+'\',\'owner\')">To Gunjan Sir</button>';
+    b+='<button class="btn sm wagreen" onclick="toggleWa(this)">WhatsApp ▾</button> <span class="wasub">'+sub+'</span> ';
+  }else if(n==='action'&&r.status!=='Completed')b='<button class="btn sm ok" onclick="markDone(\'action\',\''+r.id+'\')">Done</button>';
+  else if(n==='followup'&&isOpenFu(r))b='<button class="btn sm ok" onclick="markDone(\'followup\',\''+r.id+'\')">Done</button>';
+  else if(n==='minutes'&&r.status!=='Finalized')b='<button class="btn sm ok" onclick="setStatus(\'minutes\',\''+r.id+'\',\'Finalized\')">Finalize</button>';
+  b+=' <button class="btn sm danger" onclick="delRec(\''+n+'\',\''+r.id+'\',this)">Delete</button>';
+  return b;
+}
+
+function toggleWa(btn){
+  var s=btn.nextElementSibling.nextElementSibling||btn.nextElementSibling;
+  s=btn.parentNode.querySelector('.wasub');
+  s.classList.toggle('open');
+  btn.textContent=s.classList.contains('open')?'WhatsApp ▴':'WhatsApp ▾';
+}
+
+
+
+function setStatus(n,id,v){
+  call('dashSave',n,{id:id,status:v}).then(function(r){
+    var i=S.data[n].findIndex(function(x){return x.id===id;});
+    if(i>=0)S.data[n][i]=r.record;
+    toast('Updated '+id);go(S.view,S.flt);
+  }).catch(function(e){toast(e.message||e,1);});
+}
+function markDone(n,id){setStatus(n,id,'Completed');}
+
+function delRec(n,id,btn){
+  if(!confirm('Delete '+id+(n==='meeting'?' and its follow-ups':'')+'? This cannot be undone.'))return;
+  var tr=btn&&btn.closest('tr');
+  if(tr){tr.style.opacity='.5';tr.style.pointerEvents='none';}
+  if(btn)btn.textContent='Deleting…';
+  var t=$('toast');t.textContent='Deleting '+id+'… please wait';t.className='';
+  t.style.display='block';clearTimeout(t._h);
+  call('dashDelete',n,id)
+    .then(function(){
+      S.data[n]=S.data[n].filter(function(x){return x.id!==id;});
+      if(n==='meeting')S.data.followup=S.data.followup.filter(function(x){return x.meetingId!==id;});
+      toast('Deleted '+id);renderList(n);
+    })
+    .catch(function(e){
+      if(tr){tr.style.opacity='';tr.style.pointerEvents='';}
+      if(btn)btn.textContent='Delete';
+      toast(e.message||e,1);
+    });
+}
+
+function syncCell(r){
+  var s=r.syncStatus||'Not Synced';
+  var cls=s==='Synced'?'p-g':(s==='Not Synced'||s==='Pending Update')?'p-a':'p-r';
+  var btn=r.status==='Deleted Externally'?'':' <button class="btn sm '+(s==='Synced'?'resync':'dosync')+'" onclick="syncOne(\''+r.id+'\',this)">'+(s==='Synced'?'Re-sync':'Sync')+'</button>';
+  return '<span onclick="event.stopPropagation()" style="white-space:nowrap">'+pill(s,cls)+btn+'</span>';
+}
+function syncOne(id,btn){
+  btn.disabled=true;btn.textContent='Syncing…';
+  call('dashSyncOne',id).then(function(r){
+    var i=S.data.meeting.findIndex(function(x){return x.id===id;});
+    if(i>=0){S.data.meeting[i].syncStatus=r.status;S.data.meeting[i].eventId=r.eventId||'';}
+    toast(r.message);
+    if(S.view==='meeting')renderList('meeting');
+  }).catch(function(e){
+    toast(e.message||e,1);
+    refreshEntity('meeting').then(function(){if(S.view==='meeting')renderList('meeting');});
+  });
+}
+
+/* ============================== forms =================================== */
+function closeModal(){$('modalHost').innerHTML='';}
+function editRec(n,id){var r=S.data[n].filter(function(x){return x.id===id;})[0];if(!r){toast('Record not found. Refresh and try again.',1);return;}openForm(n,r);}
+function fieldHtml(f,v){
+  var id='f_'+f.k,req=f.req?' <span class="rq">*</span>':'',inp='';
+  v=v==null?'':v;
+  if(f.t==='select'){
+    var o=S.boot.lists[f.list]||[];
+    inp='<select id="'+id+'">'+(f.blank===0?'':'<option value=""></option>')+o.map(function(x){return '<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>';
+  }else if(f.t==='meet'){
+    inp='<select id="'+id+'"><option value="">'+(f.req?'— choose a meeting —':'— none —')+'</option>'+S.data.meeting.slice().reverse().map(function(m){return '<option value="'+esc(m.id)+'"'+(m.id===v?' selected':'')+'>'+esc(m.id+' — '+m.title+' ('+fmtD(m.date)+')')+'</option>';}).join('')+'</select>';
+  }else if(f.t==='textarea'){inp='<textarea id="'+id+'">'+esc(v)+'</textarea>';}
+  else inp='<input id="'+id+'" type="'+f.t+'" value="'+esc(v)+'"'+(f.dl?' list="custlist"':'')+'>';
+  return '<div class="fld'+(f.full?' full':'')+'"><label>'+f.l+req+'</label>'+inp+'</div>';
+}
+function openForm(n,rec){
+  var isNew=!rec,v=rec||DEFAULTS[n](),fs=FORMS[n];
+  var h='<div class="ov"><div class="modal" role="dialog"><header><span>'+(isNew?'New ':'Edit ')+TITLES[n]+(isNew?'':' · '+esc(rec.id))+'</span><button class="x" onclick="closeModal()" aria-label="Close">×</button></header><div class="body"><div class="form">'+
+    fs.map(function(f){return fieldHtml(f,v[f.k]);}).join('')+
+    (n==='meeting'?fuSection(rec):'')+
+    (n==='meeting'&&isNew?'<div class="fld full"><label><input type="checkbox" id="f_saveCustomer" checked> Also save this customer to the Customers list</label></div>':'')+
+    '</div><datalist id="custlist">'+S.data.customer.map(function(c){return '<option value="'+esc(c.name)+'">';}).join('')+'</datalist></div>'+
+    '<footer><span class="errbox" id="ferr"></span><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn acc" id="fsave" onclick="saveForm(\''+n+'\',\''+(rec?rec.id:'')+'\')">Save</button></footer></div></div>';
+  $('modalHost').innerHTML=h;
+  if(n==='meeting')wireMeeting();
+  if(n==='followup'){var m=$('f_meetingId');m.onchange=function(){var x=S.data.meeting.filter(function(q){return q.id===m.value;})[0];var c=$('f_custName');if(x&&!c.value)c.value=x.custName||x.company||'';};}
+  var first=document.querySelector('.modal input:not([type=checkbox]),.modal textarea,.modal select');if(first)first.focus();
+}
+function wireMeeting(){
+  var el=function(k){return $('f_'+k);};
+  el('custName').onchange=function(){
+    var c=S.data.customer.filter(function(x){return x.name.toLowerCase()===el('custName').value.trim().toLowerCase();})[0];if(!c)return;
+    [['company','company'],['custMobile','mobile'],['custWa','wa'],['address','address'],['mapLink','mapLink']].forEach(function(p){if(!el(p[0]).value)el(p[0]).value=c[p[1]]||'';});
+  };
+  el('start').onchange=function(){if(el('start').value)el('end').value=addMin(el('start').value,S.boot.cfg.dur);};
+  el('mode').onchange=function(){if(el('mode').value==='Virtual')el('locType').value='Google Meet';else if(el('locType').value==='Google Meet')el('locType').value=S.boot.cfg.defLoc==='Google Meet'?"Customer's Office":S.boot.cfg.defLoc;};
+  el('locType').onchange=function(){if(el('locType').value==='KISAN ENTERPRISES Office'){var s=S.boot.settings;if(!el('address').value)el('address').value=s.officeAddr;if(!el('mapLink').value)el('mapLink').value=s.officeMap;}};
+}
+function saveForm(n,id){
+  var data={},err=$('ferr'),btn=$('fsave');err.textContent='';
+  FORMS[n].forEach(function(f){var e=$('f_'+f.k);if(e)data[f.k]=e.value;});
+  var missing=FORMS[n].filter(function(f){
+  if(!f.req)return false;
+  if(id&&n==='meeting'&&(f.k==='custName'||f.k==='custMobile'))return false;
+  return !String(data[f.k]||'').trim();
+}).map(function(f){return f.l;});
+  if(missing.length){err.textContent='Required: '+missing.join(', ');return;}
+  if(id)data.id=id;
+  var sc=$('f_saveCustomer');if(sc)data.saveCustomer=sc.checked;
+    if(n==='meeting'){
+    var fd=$('f_fuDate'),fsub=$('f_fuSubject'),ft=$('f_fuType'),fst=$('f_fuStatus'),fid=$('f_fuId');
+    if(fd&&fd.value){data.fuDate=fd.value;data.fuSubject=fsub.value;data.fuType=ft.value;data.fuStatus=fst.value;data.fuId=fid.value;}
+    else if(fid&&fid.value){err.textContent='Follow-up date is required. To drop this follow-up, set its status to Cancelled.';return;}
+    else if(fsub&&fsub.value.trim()){err.textContent='Enter the follow-up date, or clear the follow-up note.';return;}
+  }
+  btn.disabled=true;btn.textContent='Saving…';
+  call('dashSave',n,data).then(function(r){
+        var arr=S.data[n],i=arr.findIndex(function(x){return x.id===r.id;});
+    if(i>=0)arr[i]=r.record;else arr.push(r.record);
+    var jobs=[];
+    if(n==='meeting'&&data.saveCustomer)jobs.push(refreshEntity('customer').catch(function(){}));
+    if(data.fuDate)jobs.push(refreshEntity('followup').catch(function(){}));
+    return Promise.all(jobs).then(function(){
+      closeModal();toast(r.followupError?r.followupError:'Saved '+r.id,!!r.followupError);
+      if(S.view==='overview')go('overview');else if(S.view===n)renderList(n);else go(n);
+    });
+  })
+  
+  .catch(function(e){btn.disabled=false;btn.textContent='Save';err.textContent=e.message||String(e);});
+}
+
+/* ============================== WhatsApp ================================ */
+function wa(id,kind){
+  toast('Preparing message…');
+  call('dashWaLink',id,kind).then(function(r){
+    refreshEntity('meeting');
+    var lbl={customer:'meeting confirmation',owner:'owner reminder',location:'location request'}[kind];
+    $('modalHost').innerHTML='<div class="ov"><div class="modal" style="width:420px"><header><span>WhatsApp ready</span><button class="x" onclick="closeModal();go(S.view,S.flt)">×</button></header><div class="body">The '+lbl+' to <b>'+esc(r.to)+'</b> is ready. Open WhatsApp and press Send.</div><footer><a class="btn wa" style="text-decoration:none" target="_blank" rel="noopener" href="'+esc(r.url)+'" onclick="setTimeout(function(){closeModal();go(S.view,S.flt);},400)">Open WhatsApp</a></footer></div></div>';
+  }).catch(function(e){toast(e.message||e,1);});
+}
+
+/* ============================== calendar sync =========================== */
+function renderSync(){
+  var m=$('main');m.innerHTML='<div class="msg">Loading…</div>';
+  call('dashSyncStatus').then(function(d){
+    var c=d.counts;
+    function card(l,v,col){return '<div class="card kpi" style="cursor:default"><div class="l">'+l+'</div><div class="v" style="color:'+col+'">'+v+'</div></div>';}
+    var h='<div class="top"><div><h1>Calendar Sync</h1><p>Calendar: <b>'+esc(d.calendar)+'</b> · Automation: '+(d.auto?pill('ON · every '+d.every+' min','p-g'):pill('OFF','p-r'))+'</p></div><div>'+
+      '<button class="btn" id="syncbtn" onclick="runSync()">Sync now</button> '+
+      '<button class="btn amber" onclick="openReset()">Reset &amp; Re-Sync Calendar</button> '+
+      (d.auto?'<button class="btn ghost" onclick="toggleAuto(false)">Turn off automation</button>':'<button class="btn ok" onclick="toggleAuto(true)">Turn on automation</button>')+'</div></div>';
+    h+='<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px">'+card('Synced',c.synced,'#1E8449')+card('Waiting',c.pending,'#B9770E')+card('Conflicts',c.conflict,'#C0392B')+card('Errors',c.error,'#C0392B')+card('Deleted in calendar',c.deleted,'#C0392B')+'</div>';
+    if(d.conflicts.length){
+      h+='<div class="card" style="margin-bottom:14px"><h3>Conflicts: changed in both places</h3><table><tr><th>Meeting</th><th>Date</th><th>Choose the version to keep</th></tr>'+
+        d.conflicts.map(function(x){return '<tr><td>'+esc(x.title)+'</td><td>'+esc(x.date)+'</td><td><button class="btn sm" onclick="resolveC(\''+x.id+'\',\'sheet\')">Keep web app version</button> <button class="btn sm ghost" onclick="resolveC(\''+x.id+'\',\'calendar\')">Use calendar version</button></td></tr>';}).join('')+'</table></div>';
+    }
+    h+='<div class="card"><h3>Recent sync activity</h3>'+(d.log.length?'<div style="overflow:auto"><table><tr><th>Time</th><th>Meeting</th><th>Direction</th><th>Operation</th><th>Status</th><th>Details</th></tr>'+
+      d.log.map(function(x){return '<tr><td>'+esc(x.ts)+'</td><td>'+esc(x.meetingId)+'</td><td>'+esc(x.dir)+'</td><td>'+esc(x.op)+'</td><td>'+pill(x.status,x.status==='Success'?'p-g':x.status==='Skipped'?'p-a':'p-r')+'</td><td>'+esc(x.error)+'</td></tr>';}).join('')+'</table></div>':'<div class="empty">No sync activity yet. Click “Sync now”.</div>')+'</div>';
+    m.innerHTML=h;
+  }).catch(function(e){m.innerHTML='<div class="msg" style="color:#C0392B">'+esc(e.message||e)+'</div>';});
+}
+function runSync(){
+  var b=$('syncbtn');b.disabled=true;b.textContent='Syncing…';
+  call('dashSyncNow').then(function(msg){toast(msg);return refreshEntity('meeting');}).then(renderSync).catch(function(e){toast(e.message||e,1);renderSync();});
+}
+function toggleAuto(on){toast(on?'Installing automation…':'Removing automation…');call('dashToggleAuto',on).then(function(){toast(on?'Automation is ON':'Automation is OFF');renderSync();}).catch(function(e){toast(e.message||e,1);});}
+function resolveC(id,choice){call('dashResolveConflict',id,choice).then(function(){toast('Conflict resolved');return refreshEntity('meeting');}).then(renderSync).catch(function(e){toast(e.message||e,1);});}
+
+
+/* ============ Reset & Re-Sync Calendar ============ */
+var RS=null;
+function openReset(){
+  toast('Checking the calendar…');
+  call('dashResetPreview').then(function(p){
+    var restore=p.deletedExternally?'<div class="fld full" style="margin-top:8px"><label style="font-weight:400"><input type="checkbox" id="rs_restore"> Also restore '+p.deletedExternally+' meeting(s) marked “Deleted Externally” back to “Scheduled” and sync them</label></div>':'';
+    $('modalHost').innerHTML='<div class="ov"><div class="modal" style="width:min(520px,94vw)" role="dialog"><header><span>Reset &amp; Re-Sync Calendar</span><button class="x" onclick="closeModal()" aria-label="Close">×</button></header><div class="body">'+
+      '<p style="margin-top:0">Target calendar: <b>'+esc(p.calendarName)+'</b><br><small style="color:var(--mut)">'+esc(p.calendarId)+'</small></p>'+
+      '<p>'+p.eligible+' of '+p.total+' meeting(s) will be checked. Missing events are created in this calendar and existing ones are updated from the Meeting Register. Events in your other calendars are <b>not</b> changed or deleted. Cancelled meetings ('+p.cancelled+') get no event.</p>'+
+      '<p style="color:var(--mut)">Safe to repeat. Keep this window open until it finishes.</p>'+restore+
+      '</div><footer><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn acc" onclick="startReset()">Start Reset &amp; Re-Sync</button></footer></div></div>';
+  }).catch(function(e){toast(e.message||e,1);});
+}
+function resetProgress(txt,pct){var t=$('rs_txt'),b=$('rs_bar');if(t)t.textContent=txt;if(b)b.style.width=pct+'%';}
+function startReset(){
+  var cb=$('rs_restore');
+  RS={cal:'',restore:!!(cb&&cb.checked),total:0,rep:{checked:0,created:0,recovered:0,unchanged:0,updated:0,removed:0,skipped:[],failed:[]}};
+  $('modalHost').innerHTML='<div class="ov"><div class="modal" style="width:min(520px,94vw)"><header><span>Re-syncing…</span></header><div class="body"><div id="rs_txt">Preparing…</div><div style="background:#eceff5;border-radius:99px;height:10px;margin-top:10px;overflow:hidden"><div id="rs_bar" style="height:10px;width:0;background:var(--acc);transition:width .3s"></div></div><p style="color:var(--mut);font-size:12px">Do not close this window.</p></div></div></div>';
+  call('dashResetBegin').then(function(b){RS.cal=b.calId;RS.total=b.total;return resetStep(0);}).catch(function(e){return resetFinish(e.message||String(e));});
+}
+function resetStep(cur){
+  return call('dashResetBatch',RS.cal,cur,RS.restore).then(function(r){
+    var p=RS.rep;['checked','created','recovered','unchanged','updated','removed'].forEach(function(k){p[k]+=r[k]||0;});
+    p.skipped=p.skipped.concat(r.skipped||[]);p.failed=p.failed.concat(r.failed||[]);
+    var pct=RS.total?Math.min(100,Math.round(r.next/RS.total*100)):100;
+    resetProgress('Checked '+p.checked+' meeting(s)… '+pct+'%',pct);
+    if(r.stopped)return resetFinish(r.stopped);
+    return r.done?resetFinish(''):resetStep(r.next);
+  }).catch(function(e){return resetFinish(e.message||String(e));});
+}
+function resetFinish(err){
+  var p=RS.rep;
+  call('dashResetEnd',err?('Stopped: '+err):('Checked '+p.checked+', created '+p.created+', updated '+p.updated)).catch(function(){});
+  return refreshEntity('meeting').catch(function(){}).then(function(){
+    function row(l,v){return '<tr><td>'+l+'</td><td><b>'+v+'</b></td></tr>';}
+    var h='<div class="ov"><div class="modal" role="dialog"><header><span>Synchronization report</span><button class="x" onclick="closeModal()" aria-label="Close">×</button></header><div class="body">'+
+      (err?'<div class="errbox" style="margin:0 0 10px">'+esc(err)+'<br>The run stopped early. Nothing was deleted. Fix the cause and run it again; finished meetings are not duplicated.</div>':'<p style="margin-top:0;color:var(--green);font-weight:600">Completed.</p>')+
+      '<table>'+row('Total meetings checked',p.checked)+row('Newly created events',p.created)+row('Existing events already synced',p.unchanged)+row('Existing events re-linked (found in calendar, not in registry)',p.recovered)+row('Events updated',p.updated)+row('Cancelled-meeting events removed',p.removed)+row('Meetings skipped',p.skipped.length)+row('Failed events',p.failed.length)+'</table>';
+    if(p.skipped.length)h+='<h3 style="margin-top:14px">Skipped</h3><table><tr><th>Meeting</th><th>Reason</th></tr>'+p.skipped.map(function(x){return '<tr><td>'+esc(x.id)+'<br><small>'+esc(x.title)+'</small></td><td>'+esc(x.reason)+'</td></tr>';}).join('')+'</table>';
+    if(p.failed.length)h+='<h3 style="margin-top:14px;color:var(--red)">Failed</h3><table><tr><th>Meeting</th><th>Error</th></tr>'+p.failed.map(function(x){return '<tr><td>'+esc(x.id)+'<br><small>'+esc(x.title)+'</small></td><td>'+esc(x.error)+'</td></tr>';}).join('')+'</table>';
+    h+='</div><footer><button class="btn" onclick="closeModal()">Close</button></footer></div></div>';
+    $('modalHost').innerHTML=h;
+    if(S.view==='sync')renderSync();
+  });
+}
+/* ============================== reports ================================= */
+function renderReports(){
+  var t=todayISO(),first=t.slice(0,8)+'01';
+  $('main').innerHTML='<div class="top"><div><h1>Reports</h1><p>Creates a PDF in your Google Drive. The folder name is set in Settings.</p></div></div>'+
+    '<div class="card" style="max-width:560px"><div class="form"><div class="fld"><label>From date</label><input type="date" id="r_from" value="'+first+'"></div><div class="fld"><label>To date</label><input type="date" id="r_to" value="'+t+'"></div></div>'+
+    '<div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn acc" id="rbtn" onclick="makeReport()">Generate PDF report</button><span id="rout"></span></div></div>';
+}
+function makeReport(){
+  var b=$('rbtn'),o=$('rout');b.disabled=true;b.textContent='Generating…';o.innerHTML='';
+  call('dashReport',$('r_from').value,$('r_to').value).then(function(r){
+    b.disabled=false;b.textContent='Generate PDF report';
+    o.innerHTML=r.count+' meeting(s). <a href="'+esc(r.url)+'" target="_blank" rel="noopener"><b>Open '+esc(r.name)+'</b></a>';
+  }).catch(function(e){b.disabled=false;b.textContent='Generate PDF report';o.innerHTML='<span class="errbox">'+esc(e.message||e)+'</span>';});
+}
+
+/* ============================== settings ================================ */
+var SET_IDS=['company','tagline','c1','c2','ownerName','ownerEmail','ownerWa','eaEmail','eaWa','officeAddr','officeMap','calId','syncMin','alertMin','remEnabled','remHour','remTo','autoOverdue','autoComplete','folder','dur','defStart','defType','defPri','defMode','defLoc'];
+var TABS=[['brand','Company & branding'],['contact','Contacts'],['auto','Calendar & automation'],['defs','Meeting defaults'],['lists','Dropdown lists'],['health','System health']];
+function tf(id,l,v,o){o=o||{};return '<div class="fld'+(o.full?' full':'')+'"><label>'+l+'</label><input id="s_'+id+'" type="'+(o.t||'text')+'" value="'+esc(v)+'"'+(o.oi?' oninput="'+o.oi+'"':'')+'>'+(o.h?'<small>'+o.h+'</small>':'')+'</div>';}
+function sf(id,l,v,opts,h){return '<div class="fld"><label>'+l+'</label><select id="s_'+id+'">'+opts.map(function(o){var val=Array.isArray(o)?o[0]:o,lab=Array.isArray(o)?o[1]:o;return '<option value="'+esc(val)+'"'+(String(v)===String(val)?' selected':'')+'>'+esc(lab)+'</option>';}).join('')+'</select>'+(h?'<small>'+h+'</small>':'')+'</div>';}
+function renderSettings(){
+  var m=$('main');m.innerHTML='<div class="msg">Loading…</div>';
+  Promise.all([call('appGetSettings'),call('dashHealth'),call('appGetLists')]).then(function(r){
+    var s=r[0],hl=r[1];S.L=r[2];S.setTab=S.setTab||'brand';
+    var L=S.boot.lists,hrs=[];for(var i=0;i<24;i++)hrs.push([i,('0'+i).slice(-2)+':00']);
+    var yn=['Yes','No'];
+    var p={};
+    p.brand='<div class="logoedit"><img id="logoPrev" src="'+esc(S.boot.brand.logo)+'" alt="Logo"><div><input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" onchange="pickLogo(this)" style="display:none"><button class="btn" onclick="$(\'logoFile\').click()">Upload logo</button> <button class="btn ghost" onclick="resetLogo()">Use default logo</button><div style="color:var(--mut);margin-top:6px;font-size:12px">PNG, JPG or WEBP. It is resized automatically and shown on a white panel.</div></div></div>'+
+      '<div class="form">'+tf('company','Company name',s.company)+tf('tagline','Tagline',s.tagline)+tf('c1','Primary colour (sidebar, buttons)',s.c1,{t:'color',oi:'previewColors()'})+tf('c2','Accent colour (highlights)',s.c2,{t:'color',oi:'previewColors()'})+'</div>';
+    p.contact='<div class="form">'+tf('ownerName','Owner name',s.ownerName)+tf('ownerEmail','Owner Google e-mail(s)',s.ownerEmail,{h:'Separate several e-mails with commas. Everyone listed here and in the EA field can use this system.'})+tf('ownerWa','Owner WhatsApp',s.ownerWa)+
+      tf('eaEmail','EA Google e-mail(s)',s.eaEmail,{h:'Separate several e-mails with commas.'})+tf('eaWa','EA WhatsApp',s.eaWa)+tf('officeMap','Office Google Maps link',s.officeMap)+
+      '<div class="fld full"><label>Office address</label><textarea id="s_officeAddr">'+esc(s.officeAddr)+'</textarea></div></div>';
+    p.auto='<div class="form">'+tf('calId','Calendar ID',s.calId,{h:'“primary” or the calendar e-mail. Share it with “Make changes to events” if it belongs to someone else.'})+
+      sf('syncMin','Sync every (minutes)',s.syncMin,['1','5','10','15','30'])+
+      tf('alertMin','Alert before a meeting (minutes, 0 = off)',s.alertMin,{t:'number',h:'E-mails the Owner/EA when a meeting is about to start.'})+
+      sf('remEnabled','Daily brief e-mail',s.remEnabled,yn)+sf('remHour','Daily brief and maintenance time (India time)',s.remHour,hrs)+
+      sf('remTo','E-mail recipients',s.remTo,['Owner','EA','Both'])+
+      sf('autoOverdue','Mark late action items Overdue automatically',s.autoOverdue,yn)+sf('autoComplete','Mark past meetings Completed automatically',s.autoComplete,yn)+
+      tf('folder','Report folder name (Google Drive)',s.folder)+'</div>'+
+      '<p style="color:var(--mut)">After saving, open Calendar Sync and use “Turn on automation” once. Later changes here are applied to the timers automatically.</p>';
+    p.defs='<div class="form">'+tf('dur','Default meeting length (minutes)',s.dur,{t:'number'})+tf('defStart','Default start time',s.defStart,{t:'time'})+
+      sf('defType','Default meeting type',s.defType,L.meetingType)+sf('defPri','Default priority',s.defPri,L.priority)+
+      sf('defMode','Default meeting mode',s.defMode,L.meetingMode)+sf('defLoc','Default location type',s.defLoc,L.locationType)+'</div>';
+    p.lists='<p style="color:var(--mut);margin-top:0">Every dropdown in the app and the sheet comes from these lists. Values marked 🔒 are used by the system and cannot be removed.</p><div class="lgrid">'+
+      S.L.map(function(l){return '<div class="card"><h3>'+esc(l.title)+'</h3><div class="chips" id="ch_'+l.key+'"></div><div class="ladd"><input id="li_'+l.key+'" placeholder="New value" onkeydown="if(event.key===\'Enter\')addItem(\''+l.key+'\')"><button class="btn sm" onclick="addItem(\''+l.key+'\')">Add</button><button class="btn sm ok" onclick="saveList(\''+l.key+'\')">Save list</button></div></div>';}).join('')+'</div>';
+    p.health=hl.map(function(x){return '<div class="hl">'+(x.ok?'<span style="color:#1E8449">✔</span> ':'<span style="color:#C0392B">✘</span> ')+esc(x.text)+(x.ok||!x.fix?'':'<small>'+esc(x.fix)+'</small>')+'</div>';}).join('');
+    m.innerHTML='<div class="top"><div><h1>Settings</h1><p>Everything here applies immediately. No code or sheet editing needed.</p></div></div>'+
+      '<div class="tabs">'+TABS.map(function(t){return '<div class="tab'+(S.setTab===t[0]?' on':'')+'" data-t="'+t[0]+'" onclick="showTab(\''+t[0]+'\')">'+t[1]+'</div>';}).join('')+'</div>'+
+      '<div class="card">'+TABS.map(function(t){return '<div class="panel'+(S.setTab===t[0]?' on':'')+'" id="p_'+t[0]+'">'+p[t[0]]+'</div>';}).join('')+'</div>'+
+      '<div class="savebar"><button class="btn acc" id="ssave" onclick="saveSettings()">Save settings</button><button class="btn ghost" onclick="sendTest()">Send test e-mail</button><span class="errbox" id="serr"></span></div>';
+    S.L.forEach(function(l){drawChips(l.key);});
+  }).catch(function(e){m.innerHTML='<div class="msg" style="color:#C0392B">'+esc(e.message||e)+'</div>';});
+}
+function showTab(t){S.setTab=t;[].forEach.call(document.querySelectorAll('.tab'),function(x){x.className='tab'+(x.getAttribute('data-t')===t?' on':'');});[].forEach.call(document.querySelectorAll('.panel'),function(x){x.className='panel'+(x.id==='p_'+t?' on':'');});}
+function previewColors(){var r=document.documentElement.style;r.setProperty('--pri',$('s_c1').value);r.setProperty('--acc',$('s_c2').value);}
+function saveSettings(){
+  var d={};SET_IDS.forEach(function(k){d[k]=$('s_'+k).value;});
+  var b=$('ssave'),er=$('serr');er.textContent='';b.disabled=true;b.textContent='Saving…';
+  call('appSaveSettings',d).then(function(){return call('appBootstrap');}).then(function(bt){S.boot=bt;applyBrand(bt.brand);buildNav();toast('Settings saved');renderSettings();})
+    .catch(function(e){b.disabled=false;b.textContent='Save settings';er.textContent=e.message||String(e);});
+}
+function sendTest(){toast('Sending…');call('dashSendTestReminder').then(function(m){toast(m);}).catch(function(e){toast(e.message||e,1);});}
+
+/* logo */
+function shrink(img){
+  var sizes=[360,300,240,200,160];
+  for(var i=0;i<sizes.length;i++){
+    var sc=Math.min(1,sizes[i]/Math.max(img.width,img.height)),c=document.createElement('canvas');
+    c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+    var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);
+    var j=c.toDataURL('image/jpeg',0.85);if(j.length<=44000)return j;
+  }
+  return null;
+}
+function pickLogo(inp){
+  var f=inp.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){var img=new Image();img.onload=function(){
+    var out=shrink(img);if(!out){toast('That image is too detailed. Try a simpler logo.',1);return;}
+    call('appSaveLogo',out).then(function(l){S.boot.brand.logo=l;applyBrand(S.boot.brand);$('logoPrev').src=l;toast('Logo updated');}).catch(function(e){toast(e.message||e,1);});
+  };img.onerror=function(){toast('Could not read that image.',1);};img.src=r.result;};
+  r.readAsDataURL(f);
+}
+function resetLogo(){call('appSaveLogo','').then(function(l){S.boot.brand.logo=l;applyBrand(S.boot.brand);$('logoPrev').src=l;toast('Default logo restored');}).catch(function(e){toast(e.message||e,1);});}
+
+/* dropdown lists */
+function getL(k){return S.L.filter(function(l){return l.key===k;})[0];}
+function drawChips(k){
+  var l=getL(k);
+  $('ch_'+k).innerHTML=l.items.map(function(x,i){var lock=l.keep.indexOf(x)>=0;return '<span class="chip">'+esc(x)+(lock?' <i title="Used by the system">🔒</i>':' <b title="Remove" onclick="rmItem(\''+k+'\','+i+')">×</b>')+'</span>';}).join('');
+}
+function addItem(k){var inp=$('li_'+k),v=inp.value.trim();if(!v)return;var l=getL(k);
+  if(l.items.some(function(x){return x.toLowerCase()===v.toLowerCase();})){toast('Already in the list',1);return;}
+  l.items.push(v);inp.value='';drawChips(k);}
+function rmItem(k,i){getL(k).items.splice(i,1);drawChips(k);}
+function saveList(k){
+  var l=getL(k);
+  call('appSaveList',k,l.items).then(function(items){l.items=items;S.boot.lists[k]=items.slice();drawChips(k);toast(l.title+' saved');}).catch(function(e){toast(e.message||e,1);});
+}
+/* ============ COLUMN FILTERS (Meeting Register) ============ */
+S.cf={};S.sort=null;S.menu=null;
+var FCOLS=['id','date','start','title','custName','priority','status','done','fu','locStatus','syncStatus'];
+var FTITLE={id:'ID',date:'Date',start:'Time',title:'Agenda',custName:'Customer',priority:'Priority',status:'Status',done:'Completed',fu:'Follow-Up',locStatus:'Location',syncStatus:'Sync'};
+
+function dup(x){return [x,x];}
+function isoAdd(iso,n){var d=new Date(iso+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+function isoMonth(iso,off){var p=iso.split('-');return new Date(Date.UTC(+p[0],+p[1]-1+off,1)).toISOString().slice(0,10);}
+function dateRange(k,t){
+  if(k==='today')return [t,t];
+  if(k==='tomorrow'){var a=isoAdd(t,1);return [a,a];}
+  if(k==='yesterday'){var b=isoAdd(t,-1);return [b,b];}
+  if(k==='week'){var dow=(new Date(t+'T00:00:00Z').getUTCDay()+6)%7,s=isoAdd(t,-dow);return [s,isoAdd(s,6)];}   // Monday to Sunday
+  if(k==='month')return [isoMonth(t,0),isoAdd(isoMonth(t,1),-1)];
+  if(k==='lastmonth')return [isoMonth(t,-1),isoAdd(isoMonth(t,0),-1)];
+  return ['',''];
+}
+
+function colActive(k){
+  var f=S.cf[k];if(!f)return false;
+  return Object.keys(f).some(function(x){var v=f[x];return Array.isArray(v)?v.length>0:!!v;});
+}
+function activeCount(){return FCOLS.filter(colActive).length;}
+function clearColFilters(){S.cf={};S.sort=null;closeMenu();renderList('meeting');}
+
+function fhHead(c){
+  var k=c[0],act=colActive(k),srt=S.sort&&S.sort.key===k;
+  var ind=act?'●':(srt?(S.sort.dir>0?'↑':'↓'):'▾');
+  return '<th class="fh'+(act||srt?' fa':'')+'" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false" data-col="'+k+'" title="Filter / sort '+esc(c[1])+'">'+c[1]+'<span class="fi">'+ind+'</span></th>';
+}
+
+/* ---- matching ---- */
+function valOf(k,r){
+  if(k==='priority')return r.priority||'Unassigned';
+  if(k==='status')return r.status||'Scheduled';
+  if(k==='locStatus')return r.locStatus||'__blank';
+  if(k==='syncStatus')return r.syncStatus||'Not Synced';
+  return '';
+}
+function applyColFilters(rows){
+  var keys=FCOLS.filter(colActive);if(!keys.length)return rows;
+  var ctx={today:todayISO(),fu:{}};
+  S.data.followup.forEach(function(x){(ctx.fu[x.meetingId]=ctx.fu[x.meetingId]||[]).push(x);});
+  return rows.filter(function(r){return keys.every(function(k){return matchCol(k,r,S.cf[k],ctx);});});
+}
+function matchCol(k,r,f,ctx){
+  var t=ctx.today,sel=f.sel||[];
+  if(k==='id'){
+    var id=String(r.id||'');
+    if(f.q&&id.toLowerCase().indexOf(f.q.toLowerCase())<0)return false;
+    return !sel.length||sel.indexOf(id)>=0;
+  }
+  if(k==='date'){
+    var d=r.date;if(!d)return false;
+    if(f.from&&d<f.from)return false;
+    if(f.to&&d>f.to)return false;
+    if(f.when==='upcoming'&&d<t)return false;     // today and later
+    if(f.when==='past'&&d>=t)return false;        // before today
+    return true;
+  }
+  if(k==='start'){
+    var s=r.start;if(!s)return false;
+    if(f.from&&s<f.from)return false;
+    if(f.to&&s>f.to)return false;
+    return true;
+  }
+  if(k==='title'){
+    var terms=String(f.q||'').split(',').map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
+    if(!terms.length)return true;
+    var hay=String(r.title||'').toLowerCase();
+    return terms.some(function(x){return hay.indexOf(x)>=0;});
+  }
+  if(k==='custName'){
+    var a=String(r.custName||'').trim().toLowerCase(),b=String(r.company||'').trim().toLowerCase();
+    if(!sel.length&&!f.blank)return true;
+    if(!a&&!b)return !!f.blank;
+    return sel.indexOf(a)>=0||sel.indexOf(b)>=0;
+  }
+  if(k==='done'){
+    if(f.v==='done')return r.status==='Completed';
+    if(f.v==='notdone')return r.status!=='Completed';
+    return true;
+  }
+  if(k==='fu'){
+    var list=ctx.fu[r.id]||[],open=list.filter(isOpenFu);
+    if(sel.length){
+      var ok=sel.some(function(o){
+        if(o==='required')return open.length>0;
+        if(o==='overdue')return open.some(function(x){return x.date&&x.date<t;});
+        if(o==='today')return open.some(function(x){return x.date===t;});
+        if(o==='upcoming')return open.some(function(x){return x.date&&x.date>t;});
+        if(o==='none')return list.filter(function(x){return x.status!=='Cancelled';}).length===0;
+        return false;
+      });
+      if(!ok)return false;
+    }
+    if(f.from||f.to){
+      if(!open.some(function(x){return x.date&&(!f.from||x.date>=f.from)&&(!f.to||x.date<=f.to);}))return false;
+    }
+    return true;
+  }
+  return sel.indexOf(valOf(k,r))>=0;   // priority, status, location, sync
+}
+
+/* ---- option lists ---- */
+function custOpts(){
+  var seen={},out=[];
+  function add(x){x=String(x||'').trim();if(!x)return;var key=x.toLowerCase();if(!seen[key]){seen[key]=1;out.push([key,x]);}}
+  S.data.meeting.forEach(function(m){add(m.custName);add(m.company);});
+  S.data.customer.forEach(function(c){add(c.name);add(c.company);});
+  return out.sort(function(a,b){return a[1].localeCompare(b[1]);});
+}
+function fmOpts(k){
+  var L=S.boot.lists;
+  if(k==='id')return S.data.meeting.map(function(m){return String(m.id);}).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});}).map(dup);
+  if(k==='custName')return custOpts();
+  if(k==='priority')return (L.priority||[]).map(dup).concat([['Unassigned','Unassigned']]);
+  if(k==='status')return (L.meetingStatus||[]).map(dup);
+  if(k==='locStatus')return (L.locationStatus||[]).map(dup).concat([['__blank','No response (blank)']]);
+  if(k==='syncStatus')return (L.syncStatus||[]).map(dup);
+  return [];
+}
+
+/* ---- menu building ---- */
+function fmChecks(opts,sel){
+  if(!opts.length)return '<div class="fmnote">No values available.</div>';
+  return '<div class="fml" id="fm_list">'+opts.map(function(o){
+    return '<label class="fo"><input type="checkbox" name="fm_sel" value="'+esc(o[0])+'"'+(sel.indexOf(o[0])>=0?' checked':'')+'> <span>'+esc(o[1])+'</span></label>';
+  }).join('')+'</div>';
+}
+function fmRadios(name,items,cur){
+  return items.map(function(i){return '<label class="fo"><input type="radio" name="'+name+'" value="'+esc(i[0])+'"'+((cur||'')===i[0]?' checked':'')+'> <span>'+esc(i[1])+'</span></label>';}).join('');
+}
+function fmSortBtns(key,items){
+  var cur=S.sort&&S.sort.key===key?S.sort.dir:0;
+  return '<div class="fmrow">'+items.map(function(i){
+    return '<button type="button" class="btn sm '+(cur===i[1]?'':'ghost')+'" aria-pressed="'+(cur===i[1])+'" onclick="setSort(\''+key+'\','+i[1]+')">'+i[0]+'</button>';
+  }).join('')+(cur?'<button type="button" class="btn sm ghost" onclick="setSort(null,0)">Clear sort</button>':'')+'</div>';
+}
+function fmBtns(label,fn){return '<button type="button" class="btn sm ghost" onclick="'+fn+'">'+label+'</button>';}
+function menuHtml(k){
+  var f=S.cf[k]||{},sel=f.sel||[],list=false;
+  var h='<h4>'+FTITLE[k]+'</h4><div class="fmerr" id="fm_err" role="alert"></div>';
+  if(k==='id'){
+    h+=fmSortBtns('id',[['A → Z',1],['Z → A',-1]])+
+       '<input type="text" id="fm_q" placeholder="Search ID…" aria-label="Search meeting IDs" value="'+esc(f.q||'')+'" oninput="fmSearch(this)">'+fmChecks(fmOpts('id'),sel);list=true;
+  }else if(k==='date'){
+    h+='<div class="fmrow">'+[['today','Today'],['tomorrow','Tomorrow'],['yesterday','Yesterday'],['week','This Week'],['month','This Month'],['lastmonth','Last Month']]
+        .map(function(p){return fmBtns(p[1],'fmDatePreset(\''+p[0]+'\')');}).join('')+'</div>'+
+       '<label class="fl" for="fm_from">From date</label><input type="date" id="fm_from" value="'+esc(f.from||'')+'">'+
+       '<label class="fl" for="fm_to">To date</label><input type="date" id="fm_to" value="'+esc(f.to||'')+'">'+
+       fmRadios('fm_when',[['','All meetings'],['upcoming','Upcoming (today and later)'],['past','Past (before today)']],f.when);
+  }else if(k==='start'){
+    h+=fmSortBtns('start',[['Earliest → Latest',1],['Latest → Earliest',-1]])+
+       '<div class="fmrow">'+fmBtns('Before 12 PM','fmTimePreset(\'\',\'11:59\')')+fmBtns('12 PM–4 PM','fmTimePreset(\'12:00\',\'16:00\')')+fmBtns('After 4 PM','fmTimePreset(\'16:01\',\'\')')+'</div>'+
+       '<label class="fl" for="fm_from">From time</label><input type="time" id="fm_from" value="'+esc(f.from||'')+'">'+
+       '<label class="fl" for="fm_to">To time</label><input type="time" id="fm_to" value="'+esc(f.to||'')+'">';
+  }else if(k==='title'){
+    h+='<label class="fl" for="fm_q">Search agenda</label><input type="text" id="fm_q" placeholder="e.g. procurement, project review" value="'+esc(f.q||'')+'">'+
+       '<div class="fmnote">Separate several words or phrases with commas. A meeting matches if it contains any of them.</div>';
+  }else if(k==='custName'){
+    h+='<input type="text" id="fm_cs" placeholder="Search customers / companies…" aria-label="Search customers" oninput="fmSearch(this)">'+
+       '<label class="fo"><input type="checkbox" id="fm_blank"'+(f.blank?' checked':'')+'> <span>Show meetings with no customer</span></label>'+fmChecks(fmOpts('custName'),sel);list=true;
+  }else if(k==='done'){
+    h+=fmRadios('fm_done',[['','All meetings'],['notdone','Not Completed'],['done','Completed']],f.v)+
+       '<div class="fmnote">Completed Today / Last 7 Days / Last 30 Days are not offered: the system does not store a completion date for meetings, and a meeting’s own date is not a completion date.</div>';
+  }else if(k==='fu'){
+    h+=fmChecks([['required','Follow-Up Required'],['overdue','Overdue'],['today','Due Today'],['upcoming','Upcoming'],['none','No Follow-Up']],sel)+
+       '<label class="fl" for="fm_from">Open follow-up from</label><input type="date" id="fm_from" value="'+esc(f.from||'')+'">'+
+       '<label class="fl" for="fm_to">Open follow-up to</label><input type="date" id="fm_to" value="'+esc(f.to||'')+'">';list=true;
+  }else{
+    h+=fmChecks(fmOpts(k),sel);list=true;
+  }
+  h+='<div class="fmf">'+fmBtns('Clear','fmClear()')+(list?fmBtns('Select All','fmAll()'):'')+'<button type="button" class="btn sm acc" onclick="applyMenu()">Apply</button></div>';
+  return h;
+}
+
+/* ---- menu open / close / position ---- */
+function placeMenu(th,m){
+  var r=th.getBoundingClientRect(),w=m.offsetWidth,h=m.offsetHeight;
+  var left=Math.max(8,Math.min(r.left,window.innerWidth-w-8));
+  var top=r.bottom+4;if(top+h>window.innerHeight-8)top=Math.max(8,window.innerHeight-h-8);
+  m.style.left=left+'px';m.style.top=top+'px';
+}
+function openMenu(th){
+  var k=th.getAttribute('data-col');
+  if(S.menu===k){closeMenu();return;}
+  closeMenu();S.menu=k;
+  var m=document.createElement('div');
+  m.id='fmenu';m.className='fmenu';m.setAttribute('role','dialog');m.setAttribute('aria-label','Filter '+FTITLE[k]);
+  m.innerHTML=menuHtml(k);
+  document.body.appendChild(m);
+  th.setAttribute('aria-expanded','true');
+  var s=m.querySelector('#fm_q,#fm_cs');if(s&&s.value&&s.id==='fm_q'&&k==='id')fmSearch(s);
+  placeMenu(th,m);
+  var first=m.querySelector('input:not([type=checkbox]):not([type=radio]),input,button');if(first&&!matchMedia('(pointer:coarse)').matches)first.focus();
+}
+function closeMenu(){
+  var m=$('fmenu');if(m)m.remove();
+  S.menu=null;
+  var a=document.querySelector('th.fh[aria-expanded="true"]');if(a)a.setAttribute('aria-expanded','false');
+}
+
+/* ---- menu actions ---- */
+function fmSearch(inp){
+  var q=inp.value.toLowerCase();
+  [].forEach.call($('fmenu').querySelectorAll('#fm_list .fo'),function(l){l.style.display=l.textContent.toLowerCase().indexOf(q)<0?'none':'';});
+}
+function fmAll(){
+  [].forEach.call($('fmenu').querySelectorAll('#fm_list .fo'),function(l){if(l.style.display!=='none')l.querySelector('input').checked=true;});
+}
+function fmDatePreset(p){var r=dateRange(p,todayISO());$('fm_from').value=r[0];$('fm_to').value=r[1];}
+function fmTimePreset(a,b){$('fm_from').value=a;$('fm_to').value=b;}
+function fmClear(){var k=S.menu;delete S.cf[k];closeMenu();renderList('meeting');}
+function setSort(key,dir){S.sort=key?{key:key,dir:dir}:null;closeMenu();renderList('meeting');}
+function applyMenu(){
+  var k=S.menu,m=$('fmenu');if(!k||!m)return;
+  function v(id){var e=m.querySelector('#fm_'+id);return e?e.value.trim():'';}
+  function checked(name){return [].map.call(m.querySelectorAll('input[name='+name+']:checked'),function(e){return e.value;});}
+  var f={};
+  if(k==='id'){f.q=v('q');f.sel=checked('fm_sel');}
+  else if(k==='date'){f.from=v('from');f.to=v('to');f.when=checked('fm_when')[0]||'';}
+  else if(k==='start'){f.from=v('from');f.to=v('to');}
+  else if(k==='title'){f.q=v('q');}
+  else if(k==='custName'){f.sel=checked('fm_sel');f.blank=m.querySelector('#fm_blank').checked;}
+  else if(k==='done'){f.v=checked('fm_done')[0]||'';}
+  else if(k==='fu'){f.sel=checked('fm_sel');f.from=v('from');f.to=v('to');}
+  else{f.sel=checked('fm_sel');}
+  if(f.from&&f.to&&f.from>f.to){$('fm_err').textContent='“From” must not be after “To”.';return;}
+  var clean={};
+  Object.keys(f).forEach(function(x){var val=f[x];if(Array.isArray(val)?val.length:val)clean[x]=val;});
+  if(Object.keys(clean).length)S.cf[k]=clean;else delete S.cf[k];
+  closeMenu();renderList('meeting');
+}
+
+/* ---- listeners (attached once; #main itself is never replaced) ---- */
+$('main').addEventListener('click',function(e){var th=e.target.closest&&e.target.closest('th.fh');if(th)openMenu(th);});
+$('main').addEventListener('keydown',function(e){
+  var th=e.target.closest&&e.target.closest('th.fh');
+  if(th&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openMenu(th);}
+});
+document.addEventListener('click',function(e){
+  if(S.menu&&!e.target.closest('#fmenu')&&!e.target.closest('th.fh'))closeMenu();
+});
+document.addEventListener('keydown',function(e){
+  if(!S.menu)return;
+  if(e.key==='Escape'){var k=S.menu;closeMenu();var th=document.querySelector('th.fh[data-col="'+k+'"]');if(th)th.focus();}
+  else if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&e.target.type!=='radio'&&e.target.closest('#fmenu')){e.preventDefault();applyMenu();}
+});
+document.addEventListener('scroll',function(e){
+  if(S.menu&&!(e.target.nodeType===1&&e.target.closest('#fmenu')))closeMenu();
+},true);
+window.addEventListener('resize',function(){
+  if(!S.menu)return;var m=$('fmenu'),th=document.querySelector('th.fh[data-col="'+S.menu+'"]');if(m&&th)placeMenu(th,m);
+});
+
+$('burger').addEventListener('click',function(){
+  var s=document.querySelector('.side'),o=s.classList.toggle('open');
+  this.setAttribute('aria-expanded',o);
+});
+$('navhost').addEventListener('click',function(){document.querySelector('.side').classList.remove('open');});
+boot();
+</script>
+</body>
+</html>
