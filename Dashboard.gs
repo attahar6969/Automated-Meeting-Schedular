@@ -1,5 +1,5 @@
 /**
- * Dashboard.gs  (full working dashboard back-end)
+ * Dashboard.gs (Part 5 of 7) (full working dashboard back-end)
  */
 
 var GLOBAL_ = this;
@@ -28,7 +28,7 @@ function ent_(name) {
 function openDashboardApp() {
   requireRole_();
   var html = HtmlService.createHtmlOutputFromFile('DashboardUI').setWidth(1400).setHeight(860);
-  SpreadsheetApp.getUi().showModalDialog(html, 'KISAN ENTERPRISES — Dashboard');
+  SpreadsheetApp.getUi().showModalDialog(html, 'ATTAHAR — Dashboard');
 }
 
 function runDashAction(fnName) {
@@ -128,22 +128,32 @@ function dashList(name) {
 }
 
 /* ============================ SAVE ====================================== */
-
 function dashSave(name, data) {
   requireRole_();
-  return withLock_(function () { return saveEntity_(name, data); });
+      if (!VIEWER_OK_)  allowViewerWrite_();
+  return withLock_(function () {
+    AUDIT_BUF_ = [];
+    try { return saveEntity_(name, data); }
+    finally { flushAudit_(); }
+  });
 }
+var MEET_CACHE_ = null;
 
 function saveEntity_(name, data) {
   var e = ent_(name);
   var sh = getSheet_(e.sheet), n = e.fields.length;
+  var rows = readRows_(sh, n);          // ONE read: finds the row, the old values and the next ID
   var row = 0, old = null, obj = {};
   if (data.id) {
-    row = findRow_(sh, data.id);
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]) === String(data.id)) { row = i + 2; break; }
+    }
     if (!row) throw new Error('Record ' + data.id + ' was not found.');
-    var cur = sh.getRange(row, 1, 1, n).getValues()[0];
-    old = rowToObj_(cur, e.fields);
-    obj = rowToObj_(cur, e.fields);
+    old = rowToObj_(rows[row - 2], e.fields);
+    obj = rowToObj_(rows[row - 2], e.fields);
+    if (data.__linkCheck && trim_(old.meetingId) !== trim_(data.__linkCheck)) {
+      throw new Error('That follow-up is not linked to this meeting.');
+    }
   }
   var isNew = !old;
   e.fields.forEach(function (f) {
@@ -155,19 +165,20 @@ function saveEntity_(name, data) {
   if (name === 'meeting') normMeeting_(obj, old, isNew);
   else if (name === 'minutes') normMinutes_(obj, isNew);
   else if (name === 'action') normAction_(obj, isNew);
-  else if (name === 'followup') normFollowup_(obj, isNew);
+  else if (name === 'followup') normFollowup_(obj, isNew, old);
   else if (name === 'customer') normCustomer_(obj, isNew);
 
   var now = new Date();
   if (isNew) {
-    obj.id = nextId_(e.kind);
+    obj.id = nextId_(e.kind, rows.map(function (r) { return r[0]; }));
     if (obj.createdAt === undefined || obj.createdAt === '') obj.createdAt = now;
     if (e.fields.some(function (f) { return f[0] === 'createdBy'; })) obj.createdBy = currentUserEmail_() || 'system';
-    row = Math.max(2, sh.getLastRow() + 1);
+    row = Math.max(2, rows.length + 2);
   }
   if (e.fields.some(function (f) { return f[0] === 'updatedAt'; })) obj.updatedAt = now;
 
   sh.getRange(row, 1, 1, n).setValues([objToRow_(obj, e.fields)]);
+  if (name === 'meeting') MEET_CACHE_ = obj;     // lets a follow-up saved right now skip re-reading the register
 
   if (isNew) logAudit_('Create', e.sheet, obj.id, '', '', obj.title || obj.task || obj.subject || obj.name || '');
   else logAuditDiff_('Update', e.sheet, obj.id, e.fields, old, obj);
@@ -181,21 +192,19 @@ function saveEntity_(name, data) {
         wa: obj.custWa, address: obj.address, mapLink: obj.mapLink });
     }
   }
-     // Follow-up typed in the meeting form: update the linked one, or create a new one
+
+  // Follow-up typed in the meeting form: update the linked one, or create a new one
   var fuErr = '';
   if (name === 'meeting' && trim_(data.fuDate)) {
     try {
       var fuId = trim_(data.fuId);
       if (fuId) {
-        var fsh = getSheet_(KE.SHEET.FOLLOWUPS), frow = findRow_(fsh, fuId);
-        if (!frow || trim_(fsh.getRange(frow, FC.meetingId).getValue()) !== trim_(obj.id)) {
-          throw new Error('That follow-up is not linked to this meeting.');
-        }
         var fpatch = {
           id: fuId,
           date: data.fuDate,
           type: trim_(data.fuType) || 'Next Meeting',
-          status: trim_(data.fuStatus) || 'Pending'
+          status: trim_(data.fuStatus) || 'Pending',
+          __linkCheck: obj.id           // refuses to edit a follow-up that belongs to another meeting
         };
         if (trim_(data.fuSubject)) fpatch.subject = trim_(data.fuSubject);
         saveEntity_('followup', fpatch);          // same ID, so no duplicate
@@ -216,7 +225,6 @@ function saveEntity_(name, data) {
   return { id: obj.id, record: ser_(obj, e.fields), followupError: fuErr };
 }
 
-
   function normMeeting_(m, old, isNew) {
   var s = getSettings_();
   if (isNew) {
@@ -236,7 +244,7 @@ function saveEntity_(name, data) {
   m.mode = m.mode || 'In-Person';
   m.status = m.status || 'Scheduled';
   inList_('meetingType', m.type, 'Meeting Type');
-  inList_('priority', m.priority, 'Priority');
+  inList_('priority', m.priority, 'Type of Customer');
   inList_('meetingMode', m.mode, 'Meeting Mode');
   inList_('meetingStatus', m.status, 'Meeting Status');
   inList_('locationType', m.locType, 'Location Type');
@@ -250,7 +258,7 @@ function saveEntity_(name, data) {
   } else {
     if (m.locType === 'Google Meet') throw new Error('Location Type "Google Meet" needs Meeting Mode = Virtual.');
     if (!m.locType) m.locType = "Customer's Office";
-    if (m.locType === 'KISAN ENTERPRISES Office') {
+    if (m.locType === 'ATTAHAR Office') {
       if (!m.address) m.address = trim_(s[SK.OFFICE_ADDR]);
       if (!m.mapLink) m.mapLink = trim_(s[SK.OFFICE_MAP]);
       m.locStatus = m.address ? 'Confirmed' : 'Pending';
@@ -273,6 +281,7 @@ function saveEntity_(name, data) {
 }
 
 function lookupMeeting_(id) {
+  if (MEET_CACHE_ && String(MEET_CACHE_.id) === String(id)) return MEET_CACHE_;
   var rows = readRows_(getSheet_(KE.SHEET.MEETINGS), MEETING_FIELDS.length);
   for (var i = 0; i < rows.length; i++) if (String(rows[i][0]) === String(id)) return rowToObj_(rows[i], MEETING_FIELDS);
   return null;
@@ -306,10 +315,12 @@ function normAction_(o, isNew) {
   else o.completedDate = '';
 }
 
-function normFollowup_(o, isNew) {
+function normFollowup_(o, isNew, old) {
   if (!o.subject) throw new Error('Follow-Up Subject is required.');
   if (!toDate_(o.date)) throw new Error('Follow-Up Date is required.');
-  if (o.meetingId) {
+  // Only look the meeting up when it is new or has changed
+  var sameMeeting = old && trim_(old.meetingId) === trim_(o.meetingId) && trim_(o.custName);
+  if (o.meetingId && !sameMeeting) {
     var m = lookupMeeting_(o.meetingId);
     if (!m) throw new Error('Meeting ' + o.meetingId + ' was not found.');
     if (!o.custName) o.custName = m.custName || m.company;
@@ -334,52 +345,58 @@ function normCustomer_(o, isNew) {
 
 /* ============================ SETTINGS ================================== */
 
+function contactPairs_(d) {
+  function email(v, label) {
+    var list = emailList_(v);
+    list.forEach(function (x) {
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)) throw new Error(label + ': "' + x + '" is not a valid e-mail address.');
+    });
+    return list.join(', ');
+  }
+  function wa(v, label) {
+    if (trim_(v) === '') return '';
+    var p = normalizePhone_(v);
+    if (!p.ok) throw new Error(label + ': ' + p.error);
+    return p.display;
+  }
+  var oe = email(d.ownerEmail, 'Owner Email'), ee = email(d.eaEmail, 'EA Email');
+  var me = currentUserEmail_();
+  var allowed = emailList_(oe).concat(emailList_(ee));
+  if (allowed.length && me && allowed.indexOf(me) === -1) {
+    throw new Error('You are signed in as ' + me + '. Your own e-mail must be in the Owner or EA list, otherwise you would lock yourself out.');
+  }
+  return [
+    [SK.COMPANY, trim_(d.company) || 'ATTAHAR'],
+    [SK.OWNER_NAME, trim_(d.ownerName)],
+    [SK.OWNER_EMAIL, oe],
+    [SK.OWNER_WA, wa(d.ownerWa, 'Owner WhatsApp')],
+    [SK.EA_EMAIL, ee],
+    [SK.EA_WA, wa(d.eaWa, 'EA WhatsApp')],
+    [SK.OFFICE_ADDR, trim_(d.officeAddr)],
+    [SK.OFFICE_MAP, trim_(d.officeMap)]
+  ];
+}
+
 function dashSaveSettings(d) {
   requireRole_();
   return withLock_(function () {
-      function email(v, label) {
-      var list = emailList_(v);
-      list.forEach(function (x) {
-        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)) throw new Error(label + ': "' + x + '" is not a valid e-mail address.');
-      });
-      return list.join(', ');
-    }
-    function wa(v, label) {
-      if (trim_(v) === '') return '';
-      var p = normalizePhone_(v);
-      if (!p.ok) throw new Error(label + ': ' + p.error);
-      return p.display;
-    }
-    var oe = email(d.ownerEmail, 'Owner Email'), ee = email(d.eaEmail, 'EA Email');
-    var me = currentUserEmail_();
-    var allowed = emailList_(oe).concat(emailList_(ee));
-    if (allowed.length && me && allowed.indexOf(me) === -1) {
-      throw new Error('You are signed in as ' + me + '. Your own e-mail must be in the Owner or EA list, otherwise you would lock yourself out.');
-    }
-    setSetting_(SK.COMPANY, trim_(d.company) || 'KISAN ENTERPRISES');
-    setSetting_(SK.OWNER_NAME, trim_(d.ownerName));
-    setSetting_(SK.OWNER_EMAIL, oe);
-    setSetting_(SK.OWNER_WA, wa(d.ownerWa, 'Owner WhatsApp'));
-    setSetting_(SK.EA_EMAIL, ee);
-    setSetting_(SK.EA_WA, wa(d.eaWa, 'EA WhatsApp'));
-    setSetting_(SK.OFFICE_ADDR, trim_(d.officeAddr));
-    setSetting_(SK.OFFICE_MAP, trim_(d.officeMap));
+    setSettingsBatch_(contactPairs_(d));
     logAudit_('Update settings', KE.SHEET.SETTINGS, 'SETTINGS', '', '', 'Updated from dashboard');
     return true;
   });
 }
-
 /* ============================ WHATSAPP ================================== */
 
 function dashWaLink(meetingId, kind) {
   requireRole_();
+  allowViewerWrite_();
   return withLock_(function () {
     var sh = getSheet_(KE.SHEET.MEETINGS);
     var row = findRow_(sh, meetingId);
     if (!row) throw new Error('Meeting not found.');
     var m = ser_(rowToObj_(sh.getRange(row, 1, 1, MEETING_FIELDS.length).getValues()[0], MEETING_FIELDS), MEETING_FIELDS);
     var s = getSettings_();
-    var company = trim_(s[SK.COMPANY]) || 'KISAN ENTERPRISES';
+    var company = trim_(s[SK.COMPANY]) || 'ATTAHAR';
     var sign = trim_(s[SK.OWNER_NAME]) || company;
     var when = fmtDate_(m.date) + ', ' + fmtTime_(m.start) + (m.end ? ' – ' + fmtTime_(m.end) : '');
     var where = m.mode === 'Virtual' ? ('Google Meet: ' + (m.meetLink || 'link will be shared')) : (m.address || 'to be confirmed');
@@ -421,6 +438,7 @@ function weekStart_(d) {
 
 function getDashboardData() {
   requireRole_();
+  allowViewerWrite_();
   var DAY = 86400000;
   var today = todayDate_(), tMs = today.getTime();
   var s = getSettings_();
@@ -491,7 +509,7 @@ function getDashboardData() {
     locations: locPending.slice(0, 5).map(function (m) {
       return { id: m.id, title: m.title, customer: m.custName || m.company || '—', date: fmtDate_(m.date), status: m.locStatus };
     }),
-    weeks: weeks,
+        weeks: weeks,
     statuses: Object.keys(statusCount).map(function (k) { return { name: k, count: statusCount[k] }; })
   };
 }
