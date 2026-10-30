@@ -1,323 +1,363 @@
 # Meeting Scheduler & Management System
+For Demo of meeting schedular open this link:https://script.google.com/macros/s/AKfycbxGTdiFku-w-8rRcj-JP7q0AqaoshoBIeT-ZJbUAk_WCfVLV5X_a2HvPTBMyqXQ-dhA/exec
 
-A professional, automation-driven Meeting Scheduler built with **Google Apps Script, JavaScript, HTML, Google Sheets, and Google Calendar API v3**. Designed to simplify meeting coordination, reduce repetitive administrative work, maintain meeting records, and track follow-ups from one centralized system.
+A custom meeting-management application built **from scratch** with Google Apps Script, JavaScript, HTML, CSS, Google Sheets, and Google Calendar API v3. It brings meeting scheduling, customer information, minutes, action items, follow-ups, calendar synchronization, reminders, reports, and administration into one web application.
 
-## Overview
+The system uses Google Sheets as its structured data store and Google Calendar as the scheduling integration. A browser-based web app provides the main interface, while Apps Script handles data operations, access checks, automation, reporting, and integrations.
 
-The Meeting Scheduler combines a web-based interface with Google Sheets for structured data management and Google Calendar for scheduling. It helps teams manage the complete meeting lifecycle — from scheduling and calendar synchronization to meeting minutes, assigned tasks, customer coordination, and follow-up tracking.
+## Highlights
 
-The system is designed for minimal manual workload: routine calendar synchronization and scheduled reminder processes can run automatically after initial setup. Users primarily need to enter meeting information, record decisions, and update the status of assigned work.
+- Built from scratch as a custom application rather than assembled from a ready-made meeting-management template.
+- Web-based interface with dashboard, navigation, record forms, filters, and an interactive help guide.
+- Meeting, minutes, action-item, follow-up, and customer records stored in Google Sheets.
+- Google Calendar synchronization with a multi-calendar registry, conflict handling, and reset/re-sync workflows.
+- Configurable scheduled synchronization, meeting alerts, daily maintenance, and daily brief emails.
+- Company branding and configurable application settings.
+- **Open To All** access option with a view-only experience for viewers.
+- PDF reporting with report files saved to Google Drive.
+- Audit and synchronization logs to support operational traceability.
 
-## Key Features
+## Main Features
 
-### 1. Meeting Management
-- Create and manage meetings with unique meeting IDs.
-- Maintain meeting dates, start and end times, titles, customers, meeting types, priorities, locations, statuses, and remarks.
-- Track scheduled, rescheduled, completed, and cancelled meetings through the meeting records and applicable status workflows.
-- View meeting information from the dashboard and Meeting Register.
-- Filter meeting records by date range, type, status, customer, and priority.
+### 1. Meeting Register
 
-### 2. Google Calendar Synchronization
-- Integrates with Google Calendar using the Calendar API v3 Advanced Service.
-- Synchronizes meeting records with configured Google Calendars.
-- Supports automatic synchronization through time-driven triggers.
-- Provides a manual **Sync Google Calendar** action for immediate synchronization.
-- Maintains a synchronization registry with a separate record for each meeting and calendar combination.
-- Records synchronization status, last synchronization time, errors, and event references.
-- Includes reset and re-synchronization workflows.
-- Supports synchronization-related error tracking and conflict resolution where available in the implementation.
-- Handles registered calendar copies when applicable, including cancellation and deletion workflows across registered calendars.
+Create and maintain meeting records with fields such as meeting date, start and end time, agenda/title, customer details, meeting type, priority, mode, location, participants, and status.
 
-**Important:** Calendar synchronization is not instantaneous at all times. Automatic updates depend on the configured trigger interval, Google service availability, permissions, and successful execution. Some conflicts or failed operations may require manual review.
+The application supports meeting lifecycle statuses such as Scheduled, Rescheduled, Completed, and Cancelled, along with synchronization and location status information.
 
-### 3. Automated Reminders and Maintenance
-The system supports scheduled background tasks through Google Apps Script time-driven triggers.
+The Meeting Register includes search and filtering tools for working with the meeting list. Meeting records can be opened to review their details and related minutes, action items, and follow-ups.
 
-- **Automatic calendar synchronization:** Runs at the configured interval.
-- **Daily reminder process:** Runs at a configured hour in the `Asia/Kolkata` time zone.
-- **Daily maintenance:** Executes as part of the daily scheduled process.
-- **Configurable reminders:** Reminder settings can be adjusted through the Settings configuration.
-- **Test reminders:** Administrators can test reminder email functionality.
-- **Trigger management:** Automation can be installed, refreshed, or switched off through the available controls.
+### 2. Dashboard and Overview
 
-The supported synchronization intervals are **1, 5, 10, 15, or 30 minutes**, with a default of 5 minutes. The default daily reminder hour is 9 AM, subject to the saved settings and Apps Script trigger scheduling.
+The Overview page brings key operational information together, including:
+
+- KPI cards for meeting and task status.
+- Today's meeting schedule and upcoming meetings.
+- Pending and overdue action items.
+- Follow-ups due and other work requiring attention.
+- Meeting activity and status charts.
+- Quick navigation to common application areas.
+- Manual refresh and dashboard calendar-sync actions.
+
+The dashboard is intended to provide a quick operational summary; the underlying records remain in the relevant Google Sheets tabs.
+
+### 3. Google Calendar Synchronization
+
+The application integrates with Google Calendar through the Apps Script Advanced Calendar service (Calendar API).
+
+Supported workflows include:
+
+- Manual full synchronization and individual meeting synchronization.
+- Automatic synchronization through an installed time-driven trigger.
+- Creating and updating calendar events from meeting records.
+- Pulling supported calendar-side changes into the application.
+- Detecting and presenting synchronization conflicts for resolution.
+- Tracking synchronization status, timestamps, errors, and event references.
+- Reset and re-sync workflows for rebuilding or reconciling calendar links.
+- Handling meeting cancellation and deletion across calendars registered for that meeting.
+
+#### Multi-calendar registry
+
+`CalendarSync.gs` maintains a dedicated **Calendar Sync Registry** with one record per Meeting ID and Calendar ID combination. This allows the application to retain references to events in multiple calendars.
+
+The Meeting Register's existing Calendar Event ID and Calendar Sync Status fields are retained as a mirror of the currently configured calendar for compatibility with the interface.
+
+**Calendar safety note:** Changing the configured Calendar ID does not automatically delete events from the previous calendar. Review the registry and synchronization report before performing administrative cleanup.
+
+Calendar synchronization depends on valid Calendar IDs, granted permissions, enabled Advanced Services, trigger execution, and Google's service availability. Failed operations and conflicts may require administrator review.
 
 ### 4. Meeting Minutes
-- Record meeting discussions, decisions, and outcomes.
-- Link minutes to the relevant meeting using its Meeting ID.
-- Maintain a structured record of meeting history.
-- Use unique meeting-minutes IDs for record identification.
 
-Meeting minutes still require a person to enter or verify the actual discussion and decisions. The system helps organize the information rather than automatically generating the contents of a meeting.
+Record discussions, decisions, outcomes, and other meeting notes. Minutes are linked to their parent meeting through the Meeting ID and use their own record identifiers.
 
-### 5. Action Item Tracking
-- Create action items associated with meetings.
-- Assign responsibilities to individuals.
-- Set priorities, assignment dates, and deadlines.
-- Track task status and overdue days.
-- Review pending work through the dashboard and Action Items sheet.
+The application organizes and stores minutes; users must enter or verify the actual discussion and decisions.
 
-This reduces the need to maintain separate task lists or manually calculate overdue work.
+### 5. Action Items
 
-### 6. Follow-Up Management
-- Maintain follow-up records linked to meetings and customers.
-- Track follow-up dates, statuses, and relevant remarks.
-- Keep outstanding follow-up work organized in a dedicated tracker.
+Create tasks arising from meetings and track:
 
-Follow-up records and their outcomes still need to be entered or updated by the responsible person.
+- Assigned person or responsibility.
+- Assignment date and deadline.
+- Priority and status.
+- Completion and overdue state.
+- Relationship to the originating meeting.
 
-### 7. Customer Management and Location Requests
-- Maintain customer information in a centralized Customers sheet.
-- Link customer records to meetings.
-- Provide a customer location request workflow.
-- Support meeting coordination using location information and configured contact details.
+Action-item status is reflected in the dashboard and relevant record views. Task ownership and progress still require users to maintain accurate information.
 
-Customer responses and location sharing depend on the customer and the communication method used. A location request does not guarantee that the customer will respond or share their location.
+### 6. Follow-Up Tracker
 
-### 8. WhatsApp and Email Communication
-- Supports WhatsApp-related meeting communication shortcuts where configured in the interface.
-- Supports email reminders through Google Apps Script.
-- Provides a test reminder workflow for checking email functionality.
-- Uses configurable reminder settings and recipients.
+Create follow-up records linked to meetings and customers. Track follow-up dates, subjects, statuses, completion information, and notes.
 
-WhatsApp shortcuts should be understood as communication assistance, not as a claim of unattended WhatsApp message delivery. Email reminders depend on valid recipient settings, granted permissions, successful trigger execution, and applicable Google sending limits.
+The meeting list can surface the relevant open or most recent follow-up. Users can update follow-up status as customer contact and next steps progress.
 
-### 9. Dashboard and Reports
-- Centralized dashboard for meeting and action-item visibility.
-- Meeting filters for more focused views.
-- Quick navigation to the Meeting Register, Minutes, Action Items, Follow-Up Tracker, and related workflows.
-- Dashboard refresh and manual calendar synchronization controls.
-- Meeting report generation and PDF/report workflows where configured.
+### 7. Customer Management
 
-### 10. Audit Logs and Synchronization Logs
-- Maintains audit records for supported administrative and data-change operations.
-- Maintains calendar synchronization logs and error details.
-- Uses unique IDs to identify meetings, minutes, action items, follow-ups, and customers.
-- Includes locking and validation helpers to reduce conflicting updates and invalid data.
+Maintain a reusable customer directory containing supported customer contact and address details. Customer information can be reused when creating meetings, reducing repeated data entry.
 
-Logs help with troubleshooting and traceability. They should not be interpreted as a guarantee that every possible external action or failure is captured.
+The application includes customer-related search and validation. Phone numbers are normalized and validated by the backend according to the application's rules.
 
-## How the Automation Works
+### 8. WhatsApp Shortcuts and Email
 
-The system separates routine background work from actions that require human input.
+The interface provides WhatsApp-assisted workflows for supported meeting communications, including meeting confirmation, location requests, and owner reminders.
 
-| Process | How it works | Manual work required |
-|---|---|---|
-| Calendar synchronization | A time-driven trigger runs the synchronization process at the configured interval. | Normally none after setup; resolve failures when needed. |
-| Daily reminders | A daily trigger runs maintenance and then the configured reminder process. | Configure recipients and reminder preferences; review failures. |
-| Meeting creation | The user enters meeting details through the available interface. | Enter and verify the meeting information. |
-| Meeting records | The backend saves supported data to Google Sheets and maintains related records. | Review the saved information when necessary. |
-| Meeting minutes | Minutes are recorded against the meeting. | Enter the actual discussions and decisions. |
-| Action items | Tasks are associated with meetings and tracked by status and deadline. | Assign work and update task progress. |
-| Follow-ups | Follow-up records organize the next steps. | Record outcomes and update follow-up status. |
-| Customer location | A location request can be initiated through the interface. | Initiate the request and follow up if the customer does not respond. |
-| Reporting | Available reporting workflows produce meeting reports. | Select the required report options and review the output. |
-| Troubleshooting | Sync and audit logs help identify issues. | Investigate permission errors, conflicts, or unsuccessful operations. |
+WhatsApp actions prepare a message and open WhatsApp for the user. **The application does not automatically send WhatsApp messages**; the user reviews and sends the prepared message in WhatsApp.
 
-### Typical daily workflow
+Email functionality includes scheduled daily brief/reminder messages and a test-email workflow. Recipients and reminder behavior are controlled through Settings. Delivery depends on valid recipient addresses, Apps Script authorization, trigger execution, and Google's email quotas.
 
-**Initial setup — once per deployment**
-1. Configure the Apps Script project and authorize the required services.
-2. Run the workbook setup process.
-3. Configure company, owner/EA, calendar, and reminder settings.
-4. Deploy the web app.
-5. Install or refresh the automation triggers.
-6. Test calendar synchronization and email reminders.
+### 9. Automation and Daily Maintenance
 
-**Routine operation**
-1. Create a meeting and enter the necessary details.
-2. Allow the configured synchronization process to update Google Calendar, or use manual synchronization when needed.
-3. Record meeting minutes after the meeting.
-4. Assign action items and deadlines.
-5. Update follow-up records as work progresses.
-6. Review the dashboard and logs when necessary.
+Apps Script time-driven triggers support the background processes.
 
-Once configured correctly, routine synchronization and scheduled background processing do not require the user to run the same functions manually each time.
+| Process | Description |
+|---|---|
+| Automatic calendar sync | Runs the calendar synchronization workflow at the configured interval. |
+| Meeting alerts | Checks for meetings approaching their configured alert window during automatic sync. |
+| Daily maintenance | Runs scheduled maintenance tasks. |
+| Daily brief email | Sends a summary email to the configured owner/EA recipients when enabled. |
+
+Automation can be installed, refreshed, or turned off through the available administrative controls. Trigger state is also stored so the application can display automation status to users who do not own the triggers.
+
+Time-driven triggers are scheduled by Google and may not execute at the exact minute selected.
+
+### 10. Reports
+
+The Reports page supports generating a PDF report for a selected date range. The report includes relevant meeting, action-item, and follow-up information and status summaries.
+
+Generated report files are saved in the configured Google Drive report folder, and the application provides a link to the resulting file. Drive authorization and folder access are required.
+
+### 11. Branding and Settings
+
+The Settings area provides configuration for the options supported by the current implementation, including:
+
+- Company name and tagline.
+- Primary and accent brand colours.
+- Company logo, including restoring the default logo.
+- Owner and executive-assistant contact information.
+- Office address and map link.
+- Calendar ID and synchronization preferences.
+- Meeting alert and daily reminder options.
+- Reminder recipients and report folder name.
+- Default meeting duration, start time, type, priority, mode, and location.
+- Configurable dropdown lists.
+- System health checks.
+
+Settings are saved through the web app. Logo data is stored in Apps Script properties rather than as a public image file.
+
+### 12. Interactive Instructions Guide
+
+The application includes an in-app guide that explains the current interface, tabs, forms, controls, and workflows. The guide can provide English and Hinglish/voice-oriented assistance.
+
+The guide is designed to explain the interface; it does not save records, delete data, or send messages on the user's behalf.
+
+### 13. Audit and Sync Logs
+
+The application maintains operational records for supported changes and calendar synchronization activity.
+
+- Audit Log: supported record and administrative changes.
+- Calendar Sync Log: synchronization outcomes, errors, and diagnostic details.
+- Calendar Sync Registry: meeting-to-calendar event mappings and synchronization metadata.
+
+Shared locking, validation, and unique record IDs help reduce conflicting writes and invalid data. Logs are intended to assist troubleshooting and are not a guarantee that every external event or failure will be captured.
+
+## Open To All and Access Control
+
+The application includes an **Open to all** option in **Settings → Contacts**.
+
+- **No:** access is limited according to the configured email access list and role checks.
+- **Yes:** the application can be made available to people with Google accounts, subject to the web-app deployment configuration and server-side authorization.
+
+The access model distinguishes the Owner/EA administrative role from the VIEWER experience. Viewers receive a **VIEWER** badge and a read-only interface for records. The view-only layer also disables settings fields and hides controls for changing Settings or using Calendar Sync.
+
+The view-only browser code is maintained separately in `ViewOnlyJs.gs`. `WebApp.gs` injects it into the served HTML at runtime, immediately before the application boot code. This means the existing `Index.html` does not need to be edited to add this layer.
+
+**Security is enforced on the server as well as in the browser.** The interface restrictions are a usability safeguard, not the sole security boundary. Backend role checks and viewer-denial checks protect restricted operations. The Open To All setting may also change spreadsheet sharing; review the sharing prompt and the spreadsheet's Share settings before enabling it.
+
+> Before sharing the web app publicly or with a broad audience, verify the deployment's execution identity, access setting, spreadsheet sharing, owner/EA configuration, and server-side role checks. A public URL alone is not a security policy.
 
 ## System Architecture
 
 ```text
-              User / Administrator
-                       |
-                       v
-            Web App / HTML Interface
-                       |
-                       v
-              Google Apps Script
-              Backend and Logic
-                /           \
-               v             v
-       Google Sheets     Google Calendar
-       Data and Logs      Calendar API v3
-               ^
-               |
-       Time-Driven Triggers
-       - Automatic Sync
-       - Daily Maintenance
-       - Daily Reminders
+                 User / Google Account
+                          |
+                          v
+                 Web App (Index.html)
+                 + ViewOnlyJs.gs layer
+                          |
+                          v
+                  Google Apps Script
+             Authorization / Business Logic
+                 /          |          \
+                v           v           v
+         Google Sheets  Google Calendar  Google Drive
+         Records/Logs   Calendar API     PDF Reports
+                ^
+                |
+          Time-driven triggers
+       Auto sync / Alerts / Daily brief
 ```
 
 ### Technology Stack
 
 | Technology | Purpose |
 |---|---|
-| Google Apps Script | Backend logic, automation, authorization, and integrations |
-| JavaScript | Application logic and client-side interactions |
-| HTML and CSS | Web interface and presentation |
-| Google Sheets | Structured records, settings, dashboard, and logs |
-| Google Calendar API v3 | Calendar event synchronization |
-| Apps Script Triggers | Scheduled background execution |
-| Google Mail services | Email reminder functionality |
-| Google Drive services | Report and file workflows where configured |
+| Google Apps Script | Server-side logic, access control, data operations, automation, and integrations |
+| JavaScript | Browser-side interactions and application logic |
+| HTML and CSS | Web application interface and styling |
+| Google Sheets | Structured records, settings, registry, and logs |
+| Google Calendar API (Advanced Service) | Calendar event synchronization |
+| Apps Script Triggers | Scheduled synchronization, alerts, and daily processes |
+| MailApp / Gmail services | Reminder and daily brief email workflows |
+| Google Drive services | PDF report storage and file access |
 
 ## Project Structure
 
-The Apps Script project is organized into separate files by responsibility.
+The project is divided into files by responsibility. The table describes the modules represented in the supplied project files; retain the exact filenames used in the Apps Script editor.
 
 | File | Responsibility |
 |---|---|
-| `Config.gs` | Central configuration, sheet names, field schemas, IDs, colors, and defaults |
-| `Utils.gs` | Shared helpers, settings access, locks, IDs, role checks, and logging |
-| `Setup.gs` | Workbook setup, headers, formatting, dropdowns, and dashboard structure |
-| `Code.gs` | Spreadsheet menu, web-app launch, automation installation, and maintenance helpers |
-| `Dashboard.gs` | Dashboard data, record operations, validation, and entity handling |
-| `WebApp.gs` | Web-app entry point, initialization, branding, and settings APIs |
-| `Sync.gs` | Calendar synchronization support, triggers, reminders, reporting, and maintenance |
-| `CalendarSync.gs` | Multi-calendar registry, re-synchronization, and calendar-specific workflows |
-| `Index.html` | User interface and client-side JavaScript |
-| `appsscript.json` | Runtime, time zone, Advanced Services, deployment settings, and OAuth scopes |
+| `Config.gs` | Central configuration, sheet names, field schemas, IDs, lists, and defaults |
+| `Utils.gs` | Shared helpers, spreadsheet access, settings, caching, locking, role checks, validation, and logging |
+| `Setup.gs` | Initial workbook setup, sheets, headers, formatting, dropdown validation, and setup verification |
+| `Code.gs` | Spreadsheet menu, web-app launch, authorization entry point, automation installation, and maintenance utilities |
+| `Dashboard.gs` | Dashboard data APIs, record serialization, validation, and create/update operations |
+| `WebApp.gs` | Web-app entry point, bootstrap, branding, logo handling, and settings APIs |
+| `ViewOnlyJs.gs` | Browser-side Open To All/view-only layer injected into the served web app |
+| `Sync.gs` | Calendar sync orchestration, triggers, alerts, daily brief emails, PDF reports, and system health |
+| `CalendarSync.gs` | Multi-calendar registry, calendar event reconciliation, reset/re-sync, and calendar-specific workflows |
+| `Index.html` | Main web application interface and client-side JavaScript |
+| `DashboardUI.html` | Spreadsheet dashboard dialog interface |
+| `appsscript.json` | Apps Script runtime, time zone, Advanced Services, deployment settings, and OAuth scopes |
 
-The exact files in your GitHub repository should match the files present in your current Apps Script project.
+## Google Sheets Data Organization
 
-## Data Organization
-
-The system uses Google Sheets as its data and operational storage layer.
+The application uses Google Sheets as its primary structured data store. Core operational tabs include:
 
 | Sheet | Purpose |
 |---|---|
-| `Dashboard` | Meeting overview, filters, quick actions, and action-item visibility |
-| `Meeting Register` | Main meeting records and synchronization status |
-| `Meeting Minutes` | Meeting discussions, decisions, and minutes |
+| `Dashboard` | Spreadsheet-side dashboard or summary surface, where created by setup |
+| `Meeting Register` | Main meeting records and calendar sync status |
+| `Meeting Minutes` | Meeting discussions and decisions |
 | `Action Items` | Assigned tasks, deadlines, and progress |
-| `Follow-Up Tracker` | Follow-up activities and status |
-| `Customers` | Customer records |
-| `Calendar Sync Log` | Synchronization history and errors |
-| `Calendar Sync Registry` | Meeting-to-calendar event references and synchronization metadata |
-| `Audit Log` | Supported change and administrative activity records |
-| `Settings` | Configurable application settings |
+| `Follow-Up Tracker` | Customer and meeting follow-up records |
+| `Customers` | Reusable customer details |
+| `Calendar Sync Log` | Calendar synchronization history and errors |
+| `Calendar Sync Registry` | Event references for each meeting/calendar combination |
+| `Audit Log` | Supported administrative and data-change activity |
+| `Settings` | Company, access, calendar, reminder, defaults, and dropdown configuration |
 
-### Unique ID System
+The setup module is responsible for creating and formatting the required workbook structure. The exact sheet set should be verified against the deployed version using the project's setup verification function.
 
-The application uses structured identifiers to make records easier to reference.
+### Record IDs and Relationships
 
-- Meetings: `KE-MTG-YYYY-001`
-- Meeting minutes: `KE-MOM-YYYY-001`
-- Action items: `KE-ACT-YYYY-001`
-- Follow-ups: `KE-FUP-YYYY-001`
-- Customers: `KE-CUS-001`
+The application uses distinct IDs for meetings, minutes, action items, follow-ups, and customers. Minutes, action items, and follow-ups are associated with their parent meeting through the Meeting ID.
 
-Related minutes, tasks, and follow-ups can be associated with their parent meeting through the Meeting ID.
-
-## Customization
-
-The application is designed to centralize many configuration choices instead of scattering company-specific values throughout the code.
-
-Depending on the setting exposed by the current implementation, administrators can configure:
-
-- Company branding and logo.
-- Owner and executive-assistant details.
-- Office address and map information.
-- Calendar configuration.
-- Automatic synchronization interval.
-- Reminder enablement and reminder hour.
-- Reminder recipients and meeting-alert preferences.
-- Default meeting options.
-- Report storage settings and other supported preferences.
-
-### Adding or changing functionality
-
-For a new feature or field, the relevant parts of the application may need to be updated together:
-
-1. `Config.gs` — define the field, setting, or dropdown option.
-2. `Setup.gs` — create or update sheet headers, formatting, and validation.
-3. Backend files — implement validation, saving, reading, and business logic.
-4. `Index.html` — add or update the corresponding interface.
-5. Synchronization and reporting files — update them if the new information must appear in Calendar events or reports.
-
-**Important:** Changing a configuration value alone does not automatically implement a new feature. Any dependent backend, interface, data, and integration logic must also be updated and tested.
+The ID prefixes and formats are defined centrally in the configuration module. Use the current `Config.gs` definitions as the source of truth if the formats are changed.
 
 ## Installation and Deployment
 
 ### Prerequisites
 
 - A Google account with access to Google Apps Script.
-- A Google spreadsheet for application data.
-- Access to the Google Calendars the application must manage.
-- Permission to authorize Calendar, Sheets, Drive, email, and trigger operations used by the project.
-- The project files listed in the repository.
+- A Google spreadsheet to hold application data.
+- Access to the Google Calendars that will be synchronized.
+- Permission to authorize the Google Sheets, Calendar, Drive, Mail, and trigger services used by the project.
+- The complete Apps Script source files, including the HTML files and `appsscript.json`.
 
-### Setup steps
+### Setup
 
-1. **Create or open the Apps Script project.** Add the project files and ensure the required functions and file names match the implementation.
-2. **Configure `appsscript.json`.** Set the appropriate time zone, enable the Calendar Advanced Service, and retain only the OAuth scopes needed by the application.
-3. **Run the initial setup.** Run `setupWorkbook()` and confirm the creation of the required sheets and formatting. Existing data should be reviewed before any migration or structural changes.
-4. **Verify the setup.** Run `verifySetup()` and resolve any reported issues.
-5. **Authorize the services.** Run the project's authorization function, such as `authorizeAll()` if it is present in the deployed version, and grant the requested permissions.
-6. **Configure Settings.** Enter the appropriate calendar, owner/EA, reminder, branding, and report details.
-7. **Deploy the web app.** In Apps Script, select **Deploy → New deployment → Web app**, configure the execution identity and access restrictions, and deploy.
-8. **Install automation.** Run `installAutomation()` or use the application's equivalent control. Approve the required permissions and verify that the triggers exist.
-9. **Test the workflows.** Create a test meeting, run a manual calendar sync, verify the calendar event, test a reminder email, and check the logs.
-10. **Use the deployed application.** Share the web-app URL only with the intended users and according to the chosen access policy.
+1. **Create or open the Apps Script project.** Add the project source files and HTML files using the filenames listed in Project Structure.
+2. **Configure the manifest.** Review `appsscript.json`, the project time zone, enabled Advanced Services, and OAuth scopes. Enable the Google Calendar API Advanced Service if it is not already enabled.
+3. **Link and authorize the spreadsheet and services.** Run `authorizeAll()` from the Apps Script editor and approve the requested permissions. This function links the active spreadsheet and checks Calendar, Drive, Mail, and trigger access.
+4. **Run the initial workbook setup.** Run `setupWorkbook()` and allow the setup process to create the required sheets and formatting.
+5. **Verify the workbook.** Run `verifySetup()` and resolve any reported problems.
+6. **Configure application settings.** Open the web app and set the company branding, owner/EA details, calendar ID, reminders, defaults, dropdown lists, and report folder.
+7. **Deploy the web app.** In Apps Script, select **Deploy → New deployment → Web app**. Choose the execution identity and access policy appropriate for the intended users, then deploy.
+8. **Install automation.** Use the Calendar Sync/automation controls or run `installAutomation()` as an authorized administrator. Confirm that the sync and daily triggers are installed.
+9. **Test the application.** Create a test meeting, run a manual calendar sync, verify the calendar event, test the reminder email, generate a sample PDF report, and review the logs.
+10. **Configure sharing carefully.** If enabling Open To All, read the sharing prompt and verify the spreadsheet's sharing settings and web-app deployment access before distributing the URL.
 
-The first deployment and authorization require manual work. Automation begins only after setup, permissions, configuration, and trigger installation are complete.
+The first-time setup, authorization, deployment, and trigger installation require administrator action. Scheduled processes run only after the required permissions and triggers are in place.
 
-## Security and Permissions
+## Typical Workflow
 
-The application includes role-checking and audit-logging helpers. The current configuration uses the Apps Script web-app deployment options `USER_ACCESSING` and `ANYONE`; actual access and authorization behavior depends on the deployment, Google account context, Workspace policies, and backend role checks.
+### Initial administration
 
-Before using the application with real business data:
+1. Authorize the Apps Script project and link the spreadsheet.
+2. Create and verify the workbook structure.
+3. Configure branding, contacts, calendar, reminders, defaults, and dropdown lists.
+4. Deploy the web app and configure access.
+5. Install automation and test the integrations.
 
-- Restrict deployment access to the intended users wherever possible.
-- Configure and verify owner/EA authorization settings.
-- Review every operation that reads or modifies meetings, settings, customers, and logs.
-- Avoid publishing confidential information, private customer details, access tokens, passwords, or credentials to GitHub.
-- Keep private business data out of screenshots and example records.
-- Review OAuth scopes and grant only the permissions the application needs.
+### Daily use
 
-A publicly accessible web-app URL should not be treated as proof that the backend is secure. Verify the effective access controls before sharing it.
+1. Review the Overview dashboard.
+2. Create or update meeting records.
+3. Use calendar synchronization to publish or reconcile meeting events.
+4. Record meeting minutes after meetings.
+5. Create and assign action items.
+6. Maintain follow-up dates and outcomes.
+7. Update customer details when needed.
+8. Generate date-range PDF reports when required.
+9. Review synchronization or audit logs when an operation needs attention.
+
+## Customization and Maintenance
+
+Many company-specific options are managed through Settings. For code-level changes, related layers may need to be updated together:
+
+1. `Config.gs` — define or change sheet names, fields, IDs, settings, and dropdown definitions.
+2. `Setup.gs` — update sheet headers, formatting, and validation.
+3. Backend modules — implement reading, validation, authorization, and saving.
+4. `Index.html` — update the web interface when the user-facing workflow changes.
+5. `ViewOnlyJs.gs` and `WebApp.gs` — update the injected view-only behavior or its insertion point if access behavior changes.
+6. `Sync.gs` and `CalendarSync.gs` — update calendar, automation, alert, and report behavior when those workflows depend on the changed fields.
+
+Test changes with non-production data before deploying them to a live workbook.
+
+## Security and Operational Notes
+
+- Do not commit real customer data, private spreadsheets, credentials, access tokens, or sensitive configuration values to a public repository.
+- Review Apps Script OAuth scopes and grant only the permissions needed by the application.
+- Restrict web-app deployment access to the intended audience where possible.
+- Configure and verify Owner/EA identities and role checks.
+- Review spreadsheet sharing when changing Open To All.
+- Browser-side hiding and disabling of controls must not replace backend authorization checks.
+- Calendar event changes require the appropriate calendar permissions, including permission to make changes to events.
+- Email and trigger operations are subject to Google quotas and service availability.
+- Time-driven triggers may run later than their nominal scheduled time.
+- WhatsApp shortcuts prepare messages for the user; they are not unattended WhatsApp delivery.
+- PDF report creation requires Drive access and a valid report destination.
 
 ## Troubleshooting
 
-| Issue | What to check |
+| Problem | Checks |
 |---|---|
-| Calendar events are not updating | Calendar ID, calendar permissions, Advanced Calendar Service, trigger installation, and synchronization logs |
-| Automatic sync is not running | Apps Script triggers, execution history, authorization, and configured interval |
-| Reminder email is not received | Reminder settings, recipient addresses, mail permissions, trigger execution, and sending limits |
-| Dashboard information appears outdated | Use the refresh action and verify the backend data and filters |
-| Calendar event was edited externally | Run synchronization and review the available conflict-resolution workflow |
-| Report generation fails | Drive permissions, report settings, execution logs, and required input |
-| Web app cannot access data | Spreadsheet linking, deployment configuration, account permissions, and role settings |
+| Web app does not open | Confirm deployment exists, the URL is current, and the account has access. |
+| App cannot find the spreadsheet | Run `authorizeAll()` from the intended bound project/spreadsheet and confirm the spreadsheet link. |
+| Setup reports missing sheets or headers | Run `verifySetup()` and review the setup output before using live data. |
+| Calendar sync fails | Check Calendar ID, Advanced Calendar Service, calendar sharing permissions, and Calendar Sync Log details. |
+| Automatic sync is not running | Check trigger installation, Apps Script execution history, authorization, and automation state. |
+| Meeting alert or daily brief is missing | Check alert/reminder settings, recipient email addresses, trigger execution, and Mail quotas. |
+| Viewer sees controls that should be restricted | Confirm `ViewOnlyJs.gs` is included, `doGet()` injects the script, and backend role checks are active. |
+| Open To All access does not behave as expected | Review the saved Open To All setting, user role, web-app deployment access, and spreadsheet sharing. |
+| PDF report generation fails | Check Drive authorization, report folder configuration, and Apps Script execution logs. |
+| Dashboard data looks outdated | Refresh the dashboard and verify the underlying sheet records and filters. |
 
-For troubleshooting, review **Apps Script → Executions**, the Calendar Sync Log, and the Audit Log where applicable.
+For diagnosis, review **Apps Script → Executions**, the Calendar Sync Log, and the Audit Log.
 
-## Limitations and Operational Notes
+## Limitations
 
-- Google Apps Script execution, trigger scheduling, email sending, and API usage are subject to Google quotas and service availability.
-- Time-driven triggers are scheduled by Google and may not execute at the exact minute requested.
-- Calendar synchronization and spreadsheet writes are separate operations; one may succeed while the other fails.
-- Automated synchronization does not eliminate the need to review failed operations or conflicts.
-- Meeting minutes, action-item assignments, customer responses, and follow-up outcomes require human input unless a separate integration is implemented.
-- WhatsApp-related controls do not imply an independently authorized WhatsApp Business API integration.
-- Actual behavior should be verified against the deployed version and its execution logs.
-
-## Intended Use
-
-This project is suitable for small teams, business owners, executive assistants, and administrative teams that need a centralized way to manage meetings, calendar events, minutes, responsibilities, and follow-ups while reducing repetitive administrative work.
+- Google Apps Script, Calendar API, Drive, email, and trigger services are subject to quotas and availability.
+- Synchronization is not guaranteed to be instantaneous.
+- Conflicts and failed external operations may require manual review.
+- Meeting minutes, task assignments, customer responses, and follow-up outcomes require user input.
+- WhatsApp messages are not sent automatically by this application.
+- The effective access model depends on both the application's server-side checks and the Apps Script deployment and spreadsheet-sharing configuration.
+- Confirm behavior in the deployed version after making code or configuration changes.
 
 ## License
 
-Add a `LICENSE` file to the repository if you intend to distribute this project under a specific open-source license. Until then, the repository's reuse and distribution terms are determined by the rights holder and any applicable third-party terms.
+Add a `LICENSE` file if you intend to distribute this project under a specific open-source license. Until a license is added, reuse and distribution are subject to the rights holder's applicable terms.
 
 ---
 
-**Built with Google Apps Script, Google Sheets, JavaScript, HTML, and Google Calendar API v3.**
+**Developed from scratch with Google Apps Script, Google Sheets, JavaScript, HTML, CSS, and Google Calendar API v3.**
