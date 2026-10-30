@@ -1,12 +1,10 @@
 /**
- * File: Utils.gs   (Part 1 of 6)
- *
+ * File: Utils.gs   (Part 2 of 7)
  * Shared helpers: settings access, locking, ID generation, phone
  * normalisation, date/time handling, audit + sync logging, access control.
  */
 
 /* ============================ SHEET ACCESS ============================== */
-
 
 var SS_CACHE_ = null;
 function getSS_() {
@@ -22,9 +20,12 @@ function getSS_() {
   return ss;
 }
 
+var SHEET_MEMO_ = {};
 function getSheet_(name) {
+  if (SHEET_MEMO_[name]) return SHEET_MEMO_[name];
   var s = getSS_().getSheetByName(name);
-  if (!s) throw new Error('Sheet "' + name + '" was not found. Run menu: KISAN ENTERPRISES > Setup (first time) first.');
+  if (!s) throw new Error('Sheet "' + name + '" was not found. Run menu: ATTAHAR > Setup (first time) first.');
+  SHEET_MEMO_[name] = s;
   return s;
 }
 
@@ -38,15 +39,30 @@ function showAlert_(title, message) {
 }
 
 function toast_(message, title) {
-  try { getSS_().toast(message, title || 'KISAN ENTERPRISES', 6); } catch (e) { Logger.log(message); }
+  try { getSS_().toast(message, title || 'ATTAHAR', 6); } catch (e) { Logger.log(message); }
 }
 
 /* ============================== SETTINGS ================================ */
-
+/* ---------- fast cache helpers ---------- */
+function cacheGet_(key) {
+  try { var v = CacheService.getScriptCache().get(key); return v ? JSON.parse(v) : null; } catch (e) { return null; }
+}
+function cachePut_(key, val, ttl) {
+  try { var s = JSON.stringify(val); if (s.length < 90000) CacheService.getScriptCache().put(key, s, ttl || 300); } catch (e) {}
+}
+function cacheDrop_(keys) {
+  try { CacheService.getScriptCache().removeAll(keys); } catch (e) {}
+}
+function clearCfgCache_() {
+  SETTINGS_MEMO_ = null; LISTS_ALL_ = null;
+  cacheDrop_(['KE_SETTINGS', 'KE_LISTS']);
+}
 /** Returns {settingName: value} read from the Settings sheet (one batch read). */
 var SETTINGS_MEMO_ = null;
 function getSettings_() {
   if (SETTINGS_MEMO_) return SETTINGS_MEMO_;
+  var cached = cacheGet_('KE_SETTINGS');
+  if (cached) { SETTINGS_MEMO_ = cached; return cached; }
   var sh = getSS_().getSheetByName(KE.SHEET.SETTINGS);
   var out = {};
   if (!sh) return out;
@@ -55,9 +71,14 @@ function getSettings_() {
   var vals = sh.getRange(SETTINGS_FIRST_ROW, 1, last - SETTINGS_FIRST_ROW + 1, 2).getValues();
   for (var i = 0; i < vals.length; i++) {
     var k = String(vals[i][0]).trim();
-    if (k) out[k] = (vals[i][1] === null || vals[i][1] === undefined) ? '' : vals[i][1];
+    if (!k) continue;
+    var v = vals[i][1];
+    if (v === null || v === undefined) v = '';
+    if (Object.prototype.toString.call(v) === '[object Date]') v = minutesToText_(timeToMinutes_(v));
+    out[k] = v;
   }
   SETTINGS_MEMO_ = out;
+  cachePut_('KE_SETTINGS', out, 300);
   return out;
 }
 
@@ -69,7 +90,7 @@ function getSetting_(key, fallback) {
 }
 
 function setSetting_(key, value) {
-  SETTINGS_MEMO_ = null;
+  clearCfgCache_();
   var sh = getSheet_(KE.SHEET.SETTINGS);
   var last = sh.getLastRow();
   if (last >= SETTINGS_FIRST_ROW) {
@@ -84,24 +105,56 @@ function setSetting_(key, value) {
   sh.getRange(last + 1, 1, 1, 2).setValues([[key, value]]);
 }
 
-/** Returns the items of a central dropdown list (see LISTS in Config.gs). */
-var LIST_MEMO_ = {};
-function getList_(listKey) {
-  if (LIST_MEMO_[listKey]) return LIST_MEMO_[listKey].slice();
-  var def = LISTS[listKey];
-  var sh = getSS_().getSheetByName(KE.SHEET.SETTINGS);
-  if (!def || !sh) return def ? def.items.slice() : [];
-  var col = LISTS_FIRST_COL + Object.keys(LISTS).indexOf(listKey);
-  var last = sh.getLastRow(), items = [];
+/** Writes many settings with ONE sheet read. Only cells whose value really changed are written. */
+function setSettingsBatch_(pairs) {
+  var sh = getSheet_(KE.SHEET.SETTINGS);
+  var last = sh.getLastRow(), rowOf = {}, cur = {}, lastKeyRow = SETTINGS_FIRST_ROW - 1;
   if (last >= SETTINGS_FIRST_ROW) {
-    var vals = sh.getRange(SETTINGS_FIRST_ROW, col, last - SETTINGS_FIRST_ROW + 1, 1).getValues();
+    var vals = sh.getRange(SETTINGS_FIRST_ROW, 1, last - SETTINGS_FIRST_ROW + 1, 2).getValues();
     for (var i = 0; i < vals.length; i++) {
-      if (String(vals[i][0]).trim() !== '') items.push(String(vals[i][0]).trim());
+      var k = String(vals[i][0]).trim();
+      if (k) { rowOf[k] = SETTINGS_FIRST_ROW + i; cur[k] = vals[i][1]; lastKeyRow = SETTINGS_FIRST_ROW + i; }
     }
   }
-  if (!items.length) items = def.items.slice();
-  LIST_MEMO_[listKey] = items;
-  return items.slice();
+  var adds = [];
+  pairs.forEach(function (p) {
+    var key = p[0], val = p[1];
+    var want = String(val === null || val === undefined ? '' : val).replace(/^'/, '');
+    if (rowOf[key]) {
+      var have = cur[key];
+      if (Object.prototype.toString.call(have) === '[object Date]') have = minutesToText_(timeToMinutes_(have));
+      if (String(have === null || have === undefined ? '' : have) === want) return;   // unchanged
+      sh.getRange(rowOf[key], 2).setValue(val);
+    } else {
+      adds.push([key, val]);
+    }
+  });
+  if (adds.length) sh.getRange(lastKeyRow + 1, 1, adds.length, 2).setValues(adds);
+  clearCfgCache_();
+}
+
+/** Returns the items of a central dropdown list (see LISTS in Config.gs). */
+var LISTS_ALL_ = null;
+function getAllLists_() {
+  if (LISTS_ALL_) return LISTS_ALL_;
+  var hit = cacheGet_('KE_LISTS');
+  if (hit) { LISTS_ALL_ = hit; return hit; }
+  var keys = Object.keys(LISTS), out = {}, vals = [];
+  var sh = getSS_().getSheetByName(KE.SHEET.SETTINGS);
+  if (sh && sh.getLastRow() >= SETTINGS_FIRST_ROW) {
+    vals = sh.getRange(SETTINGS_FIRST_ROW, LISTS_FIRST_COL, sh.getLastRow() - SETTINGS_FIRST_ROW + 1, keys.length).getValues();
+  }
+  keys.forEach(function (k, ci) {
+    var items = [];
+    for (var r = 0; r < vals.length; r++) { var t = String(vals[r][ci]).trim(); if (t) items.push(t); }
+    out[k] = items.length ? items : LISTS[k].items.slice();
+  });
+  if (sh) { LISTS_ALL_ = out; cachePut_('KE_LISTS', out, 300); }
+  return out;
+}
+function getList_(listKey) {
+  if (!LISTS[listKey]) return [];
+  return getAllLists_()[listKey].slice();
 }
 
 /* ============================== LOCKING ================================= */
@@ -112,10 +165,17 @@ var LOCK_OBJ_ = null;
 /**
  * Runs fn() while holding the script lock. Re-entrant inside one execution.
  * Prevents two users/triggers from writing IDs or syncing at the same moment.
+ *
+ * Every function that CHANGES data runs through here, so a VIEWER (Open To All
+ * mode) is stopped here on the server, whatever the browser sends.
  */
+var VIEWER_OK_ = false;
+/** Call at the top of functions that a VIEWER may use to add or edit records. */
+function allowViewerWrite_() { VIEWER_OK_ = true; }
 function withLock_(fn, timeoutMs) {
   var acquired = false;
   if (LOCK_DEPTH_ === 0) {
+    if (!VIEWER_OK_) blockViewerWrites_();
     LOCK_OBJ_ = LockService.getScriptLock();
     if (!LOCK_OBJ_.tryLock(timeoutMs || 30000)) {
       LOCK_OBJ_ = null;
@@ -136,6 +196,22 @@ function withLock_(fn, timeoutMs) {
   }
 }
 
+/** Throws when a signed-in VIEWER tries to change anything. Time-driven triggers are not affected. */
+function blockViewerWrites_() {
+  var real = '';
+  try { real = Session.getActiveUser().getEmail(); } catch (e) { real = ''; }
+  if (real && getUserRole_() === 'VIEWER') {
+    throw new Error('View only: you can look at everything, but only the Owner or the Executive Assistant can make changes.');
+  }
+}
+
+/** Use at the top of functions that change something but do not use withLock_. */
+function denyViewer_() {
+  if (getUserRole_() === 'VIEWER') {
+    throw new Error('View only: you can look at everything, but only the Owner or the Executive Assistant can make changes.');
+  }
+}
+
 /* ============================ ID GENERATION ============================= */
 
 /**
@@ -143,7 +219,7 @@ function withLock_(fn, timeoutMs) {
  * Counters are stored in Document Properties, so an ID is NEVER reused,
  * even if a row is deleted. Call inside withLock_().
  */
-function nextId_(kind) {
+function nextId_(kind, knownIds) {
   var def = KE.ID[kind];
   if (!def) throw new Error('Unknown ID type: ' + kind);
   var year = Utilities.formatDate(new Date(), KE.TZ, 'yyyy');
@@ -152,10 +228,22 @@ function nextId_(kind) {
   var props = PropertiesService.getDocumentProperties();
   var stored = parseInt(props.getProperty(key), 10);
   if (isNaN(stored)) stored = 0;
-  var inSheet = maxExistingSeq_(KE.SHEET[def.sheet], def.col, prefix);
+  var inSheet = knownIds ? maxSeqIn_(knownIds, prefix) : maxExistingSeq_(KE.SHEET[def.sheet], def.col, prefix);
   var n = Math.max(stored, inSheet) + 1;      // never go below what is already in the sheet
   props.setProperty(key, String(n));
   return prefix + Utilities.formatString('%0' + def.pad + 'd', n);
+}
+
+function maxSeqIn_(ids, prefix) {
+  var max = 0;
+  for (var i = 0; i < ids.length; i++) {
+    var v = String(ids[i]);
+    if (v.indexOf(prefix) === 0) {
+      var n = parseInt(v.substring(prefix.length), 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+  }
+  return max;
 }
 
 /** Highest sequence number already present in a sheet column for the prefix. */
@@ -163,15 +251,7 @@ function maxExistingSeq_(sheetName, col, prefix) {
   var sh = getSS_().getSheetByName(sheetName);
   if (!sh || sh.getLastRow() < 2) return 0;
   var vals = sh.getRange(2, col, sh.getLastRow() - 1, 1).getValues();
-  var max = 0;
-  for (var i = 0; i < vals.length; i++) {
-    var v = String(vals[i][0]);
-    if (v.indexOf(prefix) === 0) {
-      var n = parseInt(v.substring(prefix.length), 10);
-      if (!isNaN(n) && n > max) max = n;
-    }
-  }
-  return max;
+  return maxSeqIn_(vals.map(function (r) { return r[0]; }), prefix);
 }
 
 /* ============================ PHONE NUMBERS ============================= */
@@ -307,10 +387,6 @@ function currentUserEmail_() {
   return String(e || '').toLowerCase();
 }
 
-/**
- * Returns 'OWNER', 'EA', 'SETUP' (no emails configured yet) or '' (not authorised).
- */
-
 /** 'a@x.in, B@x.in' -> ['a@x.in','b@x.in'] (lower-case, no blanks, no duplicates). */
 function emailList_(v) {
   var seen = {}, out = [];
@@ -321,6 +397,10 @@ function emailList_(v) {
   return out;
 }
 
+/**
+ * Returns 'OWNER', 'EA', 'VIEWER' (Open To All = Yes: read-only),
+ * 'SETUP' (no emails configured yet) or '' (not authorised).
+ */
 function getUserRole_() {
   var s = getSettings_();
   var owners = emailList_(s[SK.OWNER_EMAIL]);
@@ -329,17 +409,19 @@ function getUserRole_() {
   var me = currentUserEmail_();
   if (me && owners.indexOf(me) !== -1) return 'OWNER';
   if (me && eas.indexOf(me) !== -1) return 'EA';
+  if (me && String(s[SK.OPEN_ALL] || '').toLowerCase() === 'yes') return 'VIEWER';
   return '';
 }
 
 /**
  * Call at the start of every menu / button / form action.
- * allowed = array of roles, default Owner + EA.
+ * Default: Owner, EA and (when Open To All is on) VIEWER may call it.
+ * Anything that changes data is stopped for a VIEWER inside withLock_ / denyViewer_.
  * Time-driven triggers do not call this (they run as the installing user).
  */
 function requireRole_(allowed) {
   var role = getUserRole_();
-  var ok = (allowed || ['OWNER', 'EA']).concat(['SETUP']);
+  var ok = (allowed || ['OWNER', 'EA', 'VIEWER']).concat(['SETUP']);
   if (ok.indexOf(role) === -1) {
     throw new Error('Access denied. Only the Owner and the Executive Assistant (as set in the Settings sheet) can use this function.');
   }
@@ -347,18 +429,20 @@ function requireRole_(allowed) {
 }
 
 /* ============================ LOGGING =================================== */
+var AUDIT_BUF_ = null;
 
 function logAudit_(action, sheetName, recordId, field, oldV, newV) {
   try {
+    var row = [new Date(), currentUserEmail_() || 'system', action, sheetName, recordId || '', field || '',
+      auditVal_(oldV), auditVal_(newV)];
+    if (AUDIT_BUF_) { AUDIT_BUF_.push(row); return; }
     var sh = getSS_().getSheetByName(KE.SHEET.AUDIT);
     if (!sh) return;
-    sh.appendRow([new Date(), currentUserEmail_() || 'system', action, sheetName, recordId || '', field || '',
-      auditVal_(oldV), auditVal_(newV)]);
+    sh.appendRow(row);
   } catch (e) {
     Logger.log('Audit log failed: ' + e);
   }
 }
-
 function auditVal_(v) {
   if (v === null || v === undefined) return '';
   if (Object.prototype.toString.call(v) === '[object Date]') return Utilities.formatDate(v, KE.TZ, 'dd-MMM-yyyy HH:mm');
@@ -377,6 +461,7 @@ function logAuditDiff_(action, sheetName, recordId, fields, oldObj, newObj, skip
     if (a !== b) rows.push([now, who, action, sheetName, recordId || '', fields[i][1], a, b]);
   }
   if (!rows.length) return;
+  if (AUDIT_BUF_) { rows.forEach(function (r) { AUDIT_BUF_.push(r); }); return; }
   try {
     var sh = getSS_().getSheetByName(KE.SHEET.AUDIT);
     if (!sh) return;
@@ -387,6 +472,23 @@ function logAuditDiff_(action, sheetName, recordId, fields, oldObj, newObj, skip
     Logger.log('Audit log failed: ' + e);
   }
 }
+/** Writes all collected audit rows with one sheet write. */
+function flushAudit_() {
+  var rows = AUDIT_BUF_; AUDIT_BUF_ = null;
+  if (!rows || !rows.length) return;
+  try {
+    var sh = getSheet_(KE.SHEET.AUDIT);
+    var start = sh.getLastRow() + 1;
+    try { sh.getRange(start, 1, rows.length, 8).setValues(rows); }
+    catch (e1) {
+      sh.insertRowsAfter(sh.getMaxRows(), rows.length + 100);
+      sh.getRange(start, 1, rows.length, 8).setValues(rows);
+    }
+  } catch (e) {
+    Logger.log('Audit flush failed: ' + e);
+  }
+}
+
 
 function logSync_(meetingId, eventId, direction, operation, status, errorText) {
   try {
