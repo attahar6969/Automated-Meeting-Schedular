@@ -1,5 +1,5 @@
 /**
- * File: Config.gs   (Part 1 of 6)
+ * File: Config.gs   (Part 1 of 7)
  *
  * Central configuration: sheet names, column maps, dropdown lists, colours,
  * ID formats and the default values of the Settings sheet.
@@ -75,7 +75,7 @@ var MEETING_FIELDS = [
   ['custMobile', 'Customer Mobile'], ['custWa', 'Customer WhatsApp Number'], ['ownerMobile', 'Owner Mobile'],
   ['mode', 'Meeting Mode'], ['locType', 'Meeting Location Type'], ['address', 'Full Meeting Address'],
   ['mapLink', 'Google Maps Link'], ['meetLink', 'Google Meet Link'], ['participants', 'Participants'],
-  ['agenda', 'Meeting Agenda'], ['priority', 'Priority'], ['status', 'Meeting Status'],
+  ['agenda', 'Meeting Agenda'], ['priority', 'Type of Customer'], ['status', 'Meeting Status'],
   ['locStatus', 'Location Confirmation Status'], ['ownerNotif', 'Owner Notification Status'],
   ['custNotif', 'Customer Notification Status'], ['syncStatus', 'Calendar Sync Status'],
   ['createdBy', 'Created By'], ['createdAt', 'Created At'], ['updatedAt', 'Last Updated'],
@@ -142,7 +142,7 @@ var UC = colMap_(AUDIT_FIELDS);     // Audit Log columns
  * ------------------------------------------------------------------------- */
 var LISTS = {
   meetingType:  { title: 'Meeting Type',  items: ['Internal Meeting', 'Customer Meeting', 'Vendor Meeting', 'Management Review', 'Business Discussion', 'Personal Appointment', 'Virtual Meeting', 'Other'] },
-  priority:     { title: 'Priority',      items: ['High', 'Medium', 'Low'] },
+  priority:     { title: 'Type Of Customer',      items: ['High', 'Medium', 'Low'] },
   meetingStatus:{ title: 'Meeting Status',items: ['Scheduled', 'Completed', 'Cancelled', 'Rescheduled', 'Deleted Externally'] },
   meetingMode:  { title: 'Meeting Mode',  items: ['In-Person', 'Virtual'] },
   locationType: { title: 'Location Type', items: ['KISAN ENTERPRISES Office', "Customer's Office", 'Other Location', 'Google Meet'] },
@@ -174,7 +174,8 @@ var SK = {
   SYNC_MIN: 'Synchronization Interval (minutes)',
   REM_ENABLED: 'Daily Reminders Enabled (Yes/No)',
   REM_HOUR: 'Daily Reminder Hour (0-23)',
-  REM_TO: 'Reminder Recipients (Owner / EA / Both)'
+  REM_TO: 'Reminder Recipients (Owner / EA / Both)',
+  OPEN_ALL: 'Open To All (Yes/No)'
 };
 
 var SETTINGS_DEFAULTS = [
@@ -191,7 +192,8 @@ var SETTINGS_DEFAULTS = [
   [SK.SYNC_MIN,    5, 'Allowed values: 1, 5, 10, 15, 30.'],
   [SK.REM_ENABLED, 'Yes', 'Daily follow-up / overdue-task reminder e-mail.'],
   [SK.REM_HOUR,    9, 'Hour of day (24h, India time) when the reminder e-mail is sent.'],
-  [SK.REM_TO,      'Both', 'Who receives the daily reminder e-mail.']
+  [SK.REM_TO,      'Both', 'Who receives the daily reminder e-mail.'],
+  [SK.OPEN_ALL,    'No', 'Yes = anyone with a Google account can open the web app and VIEW everything (read-only). Only the Owner / EA e-mails can make changes.']
 ];
 
 /** First data row of the settings table on the Settings sheet. */
