@@ -1,5 +1,5 @@
 /**
- * Sync.gs
+ * Sync.gs (Part 7 of 7)
  * Calendar sync, automation triggers, daily brief e-mail, PDF reports, system health.
  * Replaces any earlier Sync.gs.
  */
@@ -48,7 +48,7 @@ function syncSummary_(r) {
 /** Stops the sync early if this account cannot open the calendar. Nothing is changed in the sheet. */
 function assertCalendarAccess_(calId) {
   try {
-    retry_(function () { return Calendar.Calendars.get(calId); }, 2);
+    resolveCal_(calId);
   } catch (e) {
     var msg = String(e && e.message ? e.message : e);
     // write to the sync log at most once every 6 hours, so the 1-5 minute timer does not flood it
@@ -74,7 +74,7 @@ function eventBody_(m) {
   var lines = ['Meeting ID: ' + m.id];
   if (trim_(m.custName) || trim_(m.company)) lines.push('Customer: ' + trim_(m.custName) + (trim_(m.company) ? ' (' + trim_(m.company) + ')' : ''));
   if (trim_(m.custMobile)) lines.push('Mobile: ' + trim_(m.custMobile));
-  if (trim_(m.type)) lines.push('Type: ' + trim_(m.type) + ' | Priority: ' + trim_(m.priority));
+  if (trim_(m.type)) lines.push('Type: ' + trim_(m.type) + ' | Customer type: ' + trim_(m.priority));
   if (trim_(m.participants)) lines.push('Participants: ' + trim_(m.participants));
   if (trim_(m.agenda)) lines.push('', 'Agenda: ' + trim_(m.agenda));
   if (trim_(m.mapLink)) lines.push('', 'Map: ' + trim_(m.mapLink));
@@ -91,8 +91,38 @@ function eventBody_(m) {
 
 
 
-function getEvent_(calId, eid) {
+var EVPRE_ = {};
+/** Loads all events of the sync window in 1-2 calls, so we do not call Google once per meeting. */
+function prefetchEvents_(calId, rows) {
+  EVPRE_[calId] = null;
+  var lo = null, hi = null;
+  rows.forEach(function (r) {
+    var d = toDate_(r[MC.date - 1]);
+    if (!d || !trim_(r[MC.id - 1])) return;
+    var t = d.getTime();
+    if (lo === null || t < lo) lo = t;
+    if (hi === null || t > hi) hi = t;
+  });
+  if (lo === null) return;
+  lo -= 2 * DAY_MS_; hi += 3 * DAY_MS_;
+  if (hi - lo > 400 * DAY_MS_) hi = lo + 400 * DAY_MS_;
+  var map = {}, token = null, pages = 0;
   try {
+    do {
+      var opts = { timeMin: new Date(lo).toISOString(), timeMax: new Date(hi).toISOString(), maxResults: 2500, showDeleted: false };
+      if (token) opts.pageToken = token;
+      var res = Calendar.Events.list(calId, opts);
+      (res.items || []).forEach(function (ev) { map[ev.id] = ev; });
+      token = res.nextPageToken; pages++;
+    } while (token && pages < 4);
+    EVPRE_[calId] = map;
+  } catch (e) { EVPRE_[calId] = null; }
+}
+
+function getEvent_(calId, eid) {
+  var pre = EVPRE_[calId];
+  if (pre && pre[eid]) return pre[eid];          // found in the prefetched list: no API call
+  try {                                          // not found: ask Google to confirm (e.g. deleted event)
     return retry_(function () { return Calendar.Events.get(calId, eid); }, 3);
   } catch (e) {
     if (/Not Found|404|410|deleted/i.test(String(e.message || e))) return null;
@@ -165,19 +195,34 @@ function installTriggers_() {
   var h = parseInt(s[SK.REM_HOUR], 10);
   if (isNaN(h) || h < 0 || h > 23) h = 9;
   ScriptApp.newTrigger('dailyReminderRun').timeBased().everyDays(1).atHour(h).inTimezone(KE.TZ).create();
+  cacheDrop_(['KE_AUTO']);
+  // Viewers cannot see triggers, so the state is also stored as a property
+  PropertiesService.getDocumentProperties().setProperty('AUTO_STATE', JSON.stringify({ sync: true, daily: true }));
 }
 
 function removeTriggers_() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (TRIGGER_FNS_.indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
   });
+  cacheDrop_(['KE_AUTO']);
+  PropertiesService.getDocumentProperties().setProperty('AUTO_STATE', JSON.stringify({ sync: false, daily: false }));
 }
 
 function triggerInfo_() {
+  var props = PropertiesService.getDocumentProperties();
+  // A viewer's account owns no triggers, so it reads the saved state instead
+  if (getUserRole_() === 'VIEWER') {
+    try { return JSON.parse(props.getProperty('AUTO_STATE') || '{"sync":false,"daily":false}'); }
+    catch (e) { return { sync: false, daily: false }; }
+  }
+  var hit = cacheGet_('KE_AUTO');
+  if (hit) return hit;
   var names = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
-  return { sync: names.indexOf('autoSync') >= 0, daily: names.indexOf('dailyReminderRun') >= 0 };
+  var out = { sync: names.indexOf('autoSync') >= 0, daily: names.indexOf('dailyReminderRun') >= 0 };
+  cachePut_('KE_AUTO', out, 300);
+  if (out.sync || out.daily) props.setProperty('AUTO_STATE', JSON.stringify(out));
+  return out;
 }
-
 function dashToggleAuto(on) {
   requireRole_();
   withLock_(function () { if (on) installTriggers_(); else removeTriggers_(); });
@@ -204,7 +249,7 @@ function dailyReminderRun() {    // time-driven trigger: maintenance first, then
   } catch (e2) { Logger.log('dailyReminderRun: ' + e2); }
 }
 
-function dashSendTestReminder() { requireRole_(); return sendReminders_(true); }
+function dashSendTestReminder() { requireRole_(); denyViewer_(); return sendReminders_(true); }
 
 function recipients_(s) {
   var to = [], who = String(s[SK.REM_TO] || 'Both');
@@ -314,11 +359,16 @@ function dashHealth() {
   add(trim_(s[SK.EA_EMAIL]), 'EA e-mail set', 'Fill "EA Google e-mail" in Contacts');
   add(trim_(s[SK.OWNER_WA]), 'Owner WhatsApp number set', 'Fill "Owner WhatsApp" in Contacts');
   add(trim_(s[SK.OFFICE_ADDR]), 'Office address set', 'Fill "Office address" in Contacts');
-  try {
-    var cal = Calendar.Calendars.get(trim_(s[SK.CAL_ID]) || 'primary');
-    add(true, 'Google Calendar reachable: ' + (cal.summary || cal.id));
-  } catch (e) {
-    add(false, 'Google Calendar not reachable', 'Check "Calendar ID" in Calendar & Automation, and run authorizeAll once');
+  if (getUserRole_() === 'VIEWER') {
+    // A viewer's own Google account may not reach the owner's calendar, so do not report a false failure
+    add(true, 'Google Calendar: ' + calId_() + ' (connection check is shown to Owner / EA only)');
+  } else {
+    try {
+      var cal = resolveCal_(trim_(s[SK.CAL_ID]) || 'primary');
+      add(true, 'Google Calendar reachable: ' + cal.name);
+    } catch (e) {
+      add(false, 'Google Calendar not reachable', 'Check "Calendar ID" in Calendar & Automation, and run authorizeAll once');
+    }
   }
   var t = triggerInfo_();
   add(t.sync && t.daily, 'Automation is ON (sync, alerts, daily brief, maintenance)', 'Open Calendar Sync and turn on automation');
