@@ -1,5 +1,5 @@
 # Meeting Scheduler & Management System
-For Demo of meeting schedular open this link:https://script.google.com/macros/s/AKfycbxGTdiFku-w-8rRcj-JP7q0AqaoshoBIeT-ZJbUAk_WCfVLV5X_a2HvPTBMyqXQ-dhA/exec
+For Demo of meeting schedular open this link: https://script.google.com/macros/s/AKfycbxGTdiFku-w-8rRcj-JP7q0AqaoshoBIeT-ZJbUAk_WCfVLV5X_a2HvPTBMyqXQ-dhA/exec
 
 A custom meeting-management application built **from scratch** with Google Apps Script, JavaScript, HTML, CSS, Google Sheets, and Google Calendar API v3. It brings meeting scheduling, customer information, minutes, action items, follow-ups, calendar synchronization, reminders, reports, and administration into one web application.
 
