@@ -1,6 +1,5 @@
 /**
- * File: Setup.gs   (Part 1 of 6)
- *
+ * File: Setup.gs   (Part 3 of 7)
  * Creates every sheet, header, format, dropdown, colour rule and the Dashboard
  * layout. Safe to run again: it never deletes data, never overwrites values
  * already typed in Settings, and only adds what is missing.
@@ -23,8 +22,8 @@ var DASH_BUTTONS = [
   { label: 'REFRESH DASHBOARD',         fn: 'refreshDashboard',        color: '#1E8449' }
 ];
 
-var DASH_LIST_HEADERS = ['Meeting ID', 'Date', 'Time', 'Meeting Title', 'Customer', 'Type', 'Priority', 'Status', 'Location Type', 'Location Status', 'Calendar Sync', 'Remarks'];
-var DASH_ACTION_HEADERS = ['Action ID', 'Meeting ID', 'Task', 'Assigned To', 'Priority', 'Assigned', 'Deadline', 'Status', 'Days Overdue', 'Meeting Title', 'Remarks', 'Last Updated'];
+var DASH_LIST_HEADERS = ['Meeting ID', 'Date', 'Time', 'Meeting Title', 'Customer', 'Type', 'Type of Customer', 'Status', 'Location Type', 'Location Status', 'Calendar Sync', 'Remarks'];
+var DASH_ACTION_HEADERS = ['Action ID', 'Meeting ID', 'Task', 'Assigned To', 'Type of Customer', 'Assigned', 'Deadline', 'Status', 'Days Overdue', 'Meeting Title', 'Remarks', 'Last Updated'];
 var DASH_ACTION_TITLE_ROW = 67;
 var DASH_ACTION_HEADER_ROW = 68;
 var DASH_ACTION_FIRST_ROW = 69;
@@ -477,7 +476,7 @@ function buildDashboardLayout_(sh) {
   sectionHeader_(sh, 12, 'FILTERS  (leave blank to show all)');
   var fl = [
     ['B13:C13', 'From Date'], ['D13:E13', 'To Date'], ['F13:G13', 'Meeting Type'],
-    ['H13:I13', 'Meeting Status'], ['J13:K13', 'Customer'], ['L13:M13', 'Priority'],
+    ['H13:I13', 'Meeting Status'], ['J13:K13', 'Customer'], ['L13:M13', 'Type of Customer'],
     ['B15:C15', 'Action Item Status']
   ];
   fl.forEach(function (f) {
