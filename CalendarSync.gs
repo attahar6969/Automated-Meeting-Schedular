@@ -1,6 +1,3 @@
-function myFunction() {
-  
-}
 /**
  * CalendarSync.gs   (NEW FILE)
  * Multi-calendar synchronisation:
