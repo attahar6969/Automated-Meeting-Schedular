@@ -1,6 +1,8 @@
+function myFunction() {
+  
+}
 /**
- * CalendarSync.gs  
- *
+ * CalendarSync.gs   (NEW FILE)
  * Multi-calendar synchronisation:
  *   - Registry sheet "Calendar Sync Registry": ONE row per (Meeting ID + Calendar ID)
  *   - syncAll_()            : replaces the old single-calendar syncAll_/syncOne_ (auto + "Sync now")
@@ -101,6 +103,9 @@ function resolveCal_(raw) {
 
 /** Throws a friendly error unless the calendar opens and (when known) allows editing events. */
 function validateCalendar_(raw) {
+  var ck = 'KE_CALOK_' + (trim_(raw) || 'primary') + '_' + currentUserEmail_();
+  var hit = cacheGet_(ck);
+  if (hit) return hit;
   var info;
   try { info = resolveCal_(raw); }
   catch (e) {
@@ -112,9 +117,9 @@ function validateCalendar_(raw) {
   if (role && ['owner', 'writer'].indexOf(role) === -1) {
     throw new Error('This account only has "' + role + '" access to "' + info.name + '". It needs "Make changes to events". Nothing was changed.');
   }
+  cachePut_(ck, info, 300);
   return info;
 }
-
 function fingerprint_(body) {
   var s = JSON.stringify([body.summary, body.location, body.description, body.start, body.end]);
   var d = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, s, Utilities.Charset.UTF_8);
@@ -295,6 +300,10 @@ function syncAll_() {
   var rows = readRows_(sh, MEETING_FIELDS.length);
   var res = { created: 0, updated: 0, pulled: 0, removed: 0, external: 0, conflicts: 0, errors: 0 };
   var todayMs = todayDate_().getTime(), failed = {}, t0 = Date.now();
+  prefetchEvents_(active.id, rows.filter(function (r) {
+  var d = toDate_(r[MC.date - 1]);
+  return d && d.getTime() >= todayMs - DAY_MS_;
+}));
   for (var i = 0; i < rows.length; i++) {
     if (Date.now() - t0 > 270000) break;                 // time guard: the next run continues
     var m = rowToObj_(rows[i], MEETING_FIELDS);
@@ -467,6 +476,7 @@ function dashResetBatch(calId, cursor, restoreDeleted) {
     var sh = getSheet_(KE.SHEET.MEETINGS);
     var rows = readRows_(sh, MEETING_FIELDS.length);
     var R = loadReg_();
+    prefetchEvents_(info.id, rows.slice(cursor, cursor + RESET_BATCH_));
     var out = { checked: 0, created: 0, recovered: 0, unchanged: 0, updated: 0, removed: 0, skipped: [], failed: [] };
     var i = cursor, t0 = Date.now(), stopped = '';
     for (; i < rows.length && i < cursor + RESET_BATCH_; i++) {
