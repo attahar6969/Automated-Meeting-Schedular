@@ -1,8 +1,8 @@
-/** Code.gs (menu + helpers) */
+/** Code.gs (menu + helpers).  (Part 4 of 7)*/
 
 function onOpen() {
   SpreadsheetApp.getUi()
-    .createMenu('KISAN ENTERPRISES')
+    .createMenu('ATTAHAR')
     .addItem('Open Web App', 'openWebApp')
     .addSeparator()
     .addItem('Sync Calendar now', 'syncCalendarNow')
