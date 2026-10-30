@@ -1,5 +1,5 @@
 /**
- * WebApp.gs
+ * Webapp.gs (Part 6 of 7)
  * Serves the web app and holds every dynamic setting API:
  * branding + logo, contacts, automation, meeting defaults, dropdown lists,
  * first-time setup, daily maintenance and "meeting starts soon" alerts.
@@ -28,9 +28,18 @@ function yes_(v, d) {
 
 /* ============================== SERVE =================================== */
 
+/**
+ * Serves Index.html unchanged and adds the "Open To All" view-only layer
+ * (VIEW_ONLY_JS_ in ViewOnlyJs.gs) just before the page starts (boot();).
+ */
 function doGet() {
   var b = brand_();
-  return HtmlService.createHtmlOutputFromFile('Index')
+  var html = HtmlService.createHtmlOutputFromFile('Index').getContent();
+  var extra = '\n/* ===== OPEN TO ALL: VIEW-ONLY LAYER ===== */\n' + VIEW_ONLY_JS_ + '\n';
+  var i = html.lastIndexOf('boot();');
+  if (i >= 0) html = html.slice(0, i) + extra + html.slice(i);
+  else html = html.replace('</body>', '<script>' + extra + '</script></body>');
+  return HtmlService.createHtmlOutput(html)
     .setTitle(b.company + ' — Meeting Management')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
@@ -43,7 +52,7 @@ function brand_() {
   try { s = getSettings_(); } catch (e) { /* sheet not ready */ }
   function g(k, d) { var v = s[k]; return (v === undefined || v === '') ? d : String(v); }
   return {
-    company: g(SK.COMPANY, 'KISAN ENTERPRISES'),
+    company: g(SK.COMPANY, 'ATTAHAR'),
     tagline: g(XK.TAGLINE, 'Hardware & Plumbing Solutions'),
     c1: g(XK.C1, '#18202E'),
     c2: g(XK.C2, '#D62828'),
@@ -56,21 +65,23 @@ function appBranding() { return brand_(); }
 function appWho() { return currentUserEmail_(); }
 
 function getLogo_() {
+  var hit = cacheGet_('KE_LOGO');
+  if (hit) return hit;
   try {
     var p = PropertiesService.getScriptProperties();
     var n = parseInt(p.getProperty('LOGO_N'), 10);
     if (n) {
       var all = p.getProperties(), s = '';
       for (var i = 0; i < n; i++) s += all['LOGO_' + i] || '';
-      if (s.indexOf('data:image/') === 0) return s;
+      if (s.indexOf('data:image/') === 0) { cachePut_('KE_LOGO', s, 21600); return s; }
     }
   } catch (e) { /* use default */ }
   return DEFAULT_LOGO_;
 }
-
 /** dataUrl = '' resets to the default logo. Returns the logo now in use. */
 function appSaveLogo(dataUrl) {
   requireRole_();
+  denyViewer_();
   var p = PropertiesService.getScriptProperties();
   var n = parseInt(p.getProperty('LOGO_N'), 10) || 0;
   for (var i = 0; i < n; i++) p.deleteProperty('LOGO_' + i);
@@ -85,6 +96,7 @@ function appSaveLogo(dataUrl) {
     p.setProperties(o);
   }
   logAudit_('Update logo', KE.SHEET.SETTINGS, 'BRANDING', 'Logo', '', dataUrl ? 'Custom logo' : 'Default logo');
+  cacheDrop_(['KE_LOGO']);
   return getLogo_();
 }
 
@@ -132,26 +144,33 @@ function appGetSettings() {
   var s = getSettings_(), c = cfg_(s);
   function g(k, d) { var v = s[k]; return (v === undefined || v === '') ? (d === undefined ? '' : String(d)) : String(v); }
   return {
-    company: g(SK.COMPANY, 'KISAN ENTERPRISES'), tagline: g(XK.TAGLINE, 'Hardware & Plumbing Solutions'),
+    company: g(SK.COMPANY, 'ATTAHAR'), tagline: g(XK.TAGLINE, 'Hardware & Plumbing Solutions'),
     c1: g(XK.C1, '#18202E'), c2: g(XK.C2, '#D62828'),
     ownerName: g(SK.OWNER_NAME), ownerEmail: g(SK.OWNER_EMAIL), ownerWa: g(SK.OWNER_WA),
     eaEmail: g(SK.EA_EMAIL), eaWa: g(SK.EA_WA), officeAddr: g(SK.OFFICE_ADDR), officeMap: g(SK.OFFICE_MAP),
+    openAll: yes_(s[SK.OPEN_ALL], false) ? 'Yes' : 'No',
     calId: g(SK.CAL_ID, 'primary'), syncMin: g(SK.SYNC_MIN, 5),
     remEnabled: g(SK.REM_ENABLED, 'Yes'), remHour: g(SK.REM_HOUR, 9), remTo: g(SK.REM_TO, 'Both'),
     alertMin: g(XK.ALERT_MIN, 30), autoOverdue: yes_(s[XK.AUTO_OVERDUE], true) ? 'Yes' : 'No',
-    autoComplete: yes_(s[XK.AUTO_COMPLETE], false) ? 'Yes' : 'No', folder: g(XK.FOLDER, 'KISAN ENTERPRISES Reports'),
-    dur: String(c.dur), defStart: c.defStart, defType: c.defType, defPri: c.defPri, defMode: c.defMode, defLoc: c.defLoc
+    autoComplete: yes_(s[XK.AUTO_COMPLETE], false) ? 'Yes' : 'No', folder: g(XK.FOLDER, 'ATTAHAR Reports'),
+    dur: String(c.dur), defStart: c.defStart, defType: c.defType, defPri: c.defPri, defMode: c.defMode, defLoc: c.defLoc,
+    lists: appListsData_()
   };
 }
 
 function appSaveSettings(d) {
   requireRole_();
+  denyViewer_();
   function oneOf(v, arr, label) { if (arr.indexOf(String(v)) === -1) throw new Error(label + ' is not valid.'); }
   function num(v, lo, hi, label) {
     var n = parseInt(v, 10);
     if (isNaN(n) || n < lo || n > hi) throw new Error(label + ' must be between ' + lo + ' and ' + hi + '.');
     return n;
   }
+  var before = getSettings_();
+  var wasOpen = yes_(before[SK.OPEN_ALL], false);
+  var openAll = (d.openAll === undefined || d.openAll === null || d.openAll === '') ? (wasOpen ? 'Yes' : 'No') : String(d.openAll);
+  oneOf(openAll, ['Yes', 'No'], 'Open to all');
   oneOf(d.syncMin, ['1', '5', '10', '15', '30'], 'Sync interval');
   oneOf(d.remEnabled, ['Yes', 'No'], 'Daily reminder');
   oneOf(d.remTo, ['Owner', 'EA', 'Both'], 'Reminder recipients');
@@ -164,35 +183,54 @@ function appSaveSettings(d) {
   if (st === null) throw new Error('Default start time is not valid.');
   if (!/^#[0-9a-fA-F]{6}$/.test(d.c1) || !/^#[0-9a-fA-F]{6}$/.test(d.c2)) throw new Error('Brand colours must look like #18202E.');
   if (getList_('meetingType').indexOf(d.defType) === -1) throw new Error('Default meeting type is not in the list.');
-  if (getList_('priority').indexOf(d.defPri) === -1) throw new Error('Default priority is not in the list.');
+  if (getList_('priority').indexOf(d.defPri) === -1) throw new Error('Default type of customer is not in the list.');
   if (getList_('meetingMode').indexOf(d.defMode) === -1) throw new Error('Default meeting mode is not in the list.');
   if (getList_('locationType').indexOf(d.defLoc) === -1) throw new Error('Default location type is not in the list.');
-  var folder = trim_(d.folder) || 'KISAN ENTERPRISES Reports';
+  var folder = trim_(d.folder) || 'ATTAHAR Reports';
 
-  dashSaveSettings(d);   // company, owner / EA contacts, office (validated + lock-out protected)
   withLock_(function () {
-    setSetting_(XK.TAGLINE, trim_(d.tagline));
-    setSetting_(XK.C1, d.c1);
-    setSetting_(XK.C2, d.c2);
-    setSetting_(SK.CAL_ID, trim_(d.calId) || 'primary');
-    setSetting_(SK.SYNC_MIN, parseInt(d.syncMin, 10));
-    setSetting_(SK.REM_ENABLED, d.remEnabled);
-    setSetting_(SK.REM_HOUR, hour);
-    setSetting_(SK.REM_TO, d.remTo);
-    setSetting_(XK.ALERT_MIN, alert);
-    setSetting_(XK.AUTO_OVERDUE, d.autoOverdue);
-    setSetting_(XK.AUTO_COMPLETE, d.autoComplete);
-    setSetting_(XK.FOLDER, folder);
-    setSetting_(XK.DUR, dur);
-    setSetting_(XK.DEF_START, "'" + minutesToText_(st));
-    setSetting_(XK.DEF_TYPE, d.defType);
-    setSetting_(XK.DEF_PRI, d.defPri);
-    setSetting_(XK.DEF_MODE, d.defMode);
-    setSetting_(XK.DEF_LOC, d.defLoc);
-    var t = triggerInfo_();
-    if (t.sync || t.daily) { try { installTriggers_(); } catch (e) { Logger.log('Trigger refresh failed: ' + e); } }
+    var pairs = contactPairs_(d).concat([
+      [SK.OPEN_ALL, openAll],
+      [XK.TAGLINE, trim_(d.tagline)], [XK.C1, d.c1], [XK.C2, d.c2],
+      [SK.CAL_ID, trim_(d.calId) || 'primary'], [SK.SYNC_MIN, parseInt(d.syncMin, 10)],
+      [SK.REM_ENABLED, d.remEnabled], [SK.REM_HOUR, hour], [SK.REM_TO, d.remTo],
+      [XK.ALERT_MIN, alert], [XK.AUTO_OVERDUE, d.autoOverdue], [XK.AUTO_COMPLETE, d.autoComplete],
+      [XK.FOLDER, folder], [XK.DUR, dur], [XK.DEF_START, "'" + minutesToText_(st)],
+      [XK.DEF_TYPE, d.defType], [XK.DEF_PRI, d.defPri], [XK.DEF_MODE, d.defMode], [XK.DEF_LOC, d.defLoc]
+    ]);
+    setSettingsBatch_(pairs);
+    // Timers are rebuilt ONLY when the interval or hour actually changed
+    var timerChanged = String(before[SK.SYNC_MIN]) !== String(parseInt(d.syncMin, 10)) ||
+                       String(before[SK.REM_HOUR]) !== String(hour);
+    if (timerChanged) {
+      var t = triggerInfo_();
+      if (t.sync || t.daily) { try { installTriggers_(); } catch (e) { Logger.log('Trigger refresh failed: ' + e); } }
+    }
+    logAudit_('Update settings', KE.SHEET.SETTINGS, 'SETTINGS', '', '', 'Updated from web app');
   });
-  return true;
+
+  var note = '';
+  if ((openAll === 'Yes') !== wasOpen) note = applyOpenSharing_(openAll === 'Yes');
+  var out = appBootstrap();     // the page uses this directly, so it needs no extra round trip
+  out.shareNote = note;
+  return out;
+}
+
+/**
+ * Open To All ON : spreadsheet = "Anyone with the link can view" (viewers need this to read the data).
+ * Open To All OFF: link sharing is removed (people shared by name keep their access).
+ * Only works when the person saving owns the spreadsheet; otherwise a message tells them what to do by hand.
+ */
+function applyOpenSharing_(on) {
+  try {
+    var f = DriveApp.getFileById(getSS_().getId());
+    if (on) f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    else f.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+    return '';
+  } catch (e) {
+    return 'Saved, but the spreadsheet sharing could not be changed automatically (' + errMsg_(e).substring(0, 120) +
+      '). The spreadsheet owner must set General access to "Anyone with the link: Viewer" (ON) or "Restricted" (OFF).';
+  }
 }
 
 /* ============================== DROPDOWN LISTS ========================== */
@@ -203,16 +241,17 @@ function listKeep_(k) {
   if (k === 'followType') return ['Customer Call'];
   return LISTS[k].items.slice();
 }
-
-function appGetLists() {
-  requireRole_();
+function appListsData_() {
+  var all = getAllLists_();
   return Object.keys(LISTS).map(function (k) {
-    return { key: k, title: LISTS[k].title, items: getList_(k), keep: listKeep_(k) };
+    return { key: k, title: LISTS[k].title, items: all[k].slice(), keep: listKeep_(k) };
   });
 }
+function appGetLists() { requireRole_(); return appListsData_(); }
 
 function appSaveList(key, items) {
   requireRole_();
+  denyViewer_();
   if (!LISTS[key]) throw new Error('Unknown list.');
   var seen = {}, clean = [];
   (items || []).forEach(function (x) {
@@ -228,6 +267,7 @@ function appSaveList(key, items) {
     var col = LISTS_FIRST_COL + Object.keys(LISTS).indexOf(key);
     sh.getRange(SETTINGS_FIRST_ROW, col, 100, 1).clearContent();
     sh.getRange(SETTINGS_FIRST_ROW, col, clean.length, 1).setValues(clean.map(function (x) { return [x]; }));
+    clearCfgCache_();
     logAudit_('Update list', KE.SHEET.SETTINGS, key, LISTS[key].title, '', clean.join(', '));
   });
   return clean;
@@ -298,6 +338,7 @@ function meetingAlerts_() {
 }
 function dashDelete(name, id) {
   requireRole_();
+    allowViewerWrite_();
   if (['meeting', 'customer', 'minutes', 'action', 'followup'].indexOf(name) === -1) {
     throw new Error('Unknown record type.');
   }
